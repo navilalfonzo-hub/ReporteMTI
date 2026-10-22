@@ -1,0 +1,65 @@
+export const SAMPLE_CSV_CONTENT = `ID,Empresa,Pais,Industria,Cargo,Campana,Fecha_Ejecucion,Invitacion_Aceptada,Respondio,Interesado,Fecha_Interes,Reunion_Agendada,Fecha_Reunion,Calificacion_Reunion,Feedback_Reunion
+LD-1001,Grupo Financiero Azteca,México,Banca,Director Comercial,Outbound Enterprise Q3,2026-08-03,Sí,Sí,Sí,2026-08-05,Sí,2026-08-08,Calificada,Presupuesto aprobado para Q4. Buscan automatizar prospección regional con 15 SDRs.
+LD-1002,BBVA Corporate Solutions,España,banking,VP de Ventas,ABM Finanzas Iberia,2026-08-04,Sí,Sí,Sí,2026-08-07,Sí,2026-08-11,Calificada,Excelente fit técnico. Solicitaron propuesta comercial para 3 unidades de negocio.
+LD-1003,Bancolombia Inversiones,Colombia,Servicios Financieros,Gerente de Marketing,Outbound Enterprise Q3,2026-08-06,Sí,Sí,Sí,2026-08-09,Sí,2026-08-14,,
+LD-1004,Banco de Crédito BCP,Perú,banca,CMO,ABM Finanzas LATAM,2026-08-08,Sí,Sí,Sí,2026-08-10,No,,,
+LD-1005,Santander Digital Tech,Chile,Fintech & Banking,Director de Tecnología,ABM Finanzas LATAM,2026-08-10,Sí,Sí,Sí,2026-08-13,Sí,2026-08-18,Calificada,Interesados en integración API con su CRM corporativo. Demo técnica agendada.
+LD-1006,Nemak Automotive Components,México,manufactura automotriz,Director de Planta,Industrial Manufacturing 2026,2026-08-12,Sí,Sí,Sí,2026-08-15,Sí,2026-08-19,,
+LD-1007,Grupo Bimbo Operaciones,México,manufactura de alimentos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-08-14,Sí,Sí,Sí,2026-08-16,Sí,2026-08-21,Calificada,Necesitan visibilidad de pipeline B2B para distribuidores mayoristas en Norteamérica.
+LD-1008,Envases Universales S.A.,Colombia,fabricación de artículos,Director Comercial,Industrial Manufacturing 2026,2026-08-15,Sí,Sí,Sí,2026-08-18,Sí,2026-08-22,Descalificada,Contrato vigente con proveedor actual hasta mediados del próximo año. Retomar en 6 meses.
+LD-1009,Metalsa Estructuras,México,manufactura automotriz,Gerente Comercial,Industrial Manufacturing 2026,2026-08-17,Sí,Sí,Sí,2026-08-20,No,,,
+LD-1010,Alicorp Industrial,Perú,manufactura de alimentos,VP de Ventas,Industrial Manufacturing 2026,2026-08-19,Sí,Sí,Sí,2026-08-22,Sí,2026-08-25,,
+LD-1011,CloudWare Solutions,Colombia,Software & SaaS,CEO,Tech Decision Makers,2026-08-21,Sí,Sí,Sí,2026-08-23,Sí,2026-08-27,Calificada,Decisor final en la llamada. Quiere arrancar piloto de 60 días en septiembre.
+LD-1012,Softtek Enterprise,México,Tecnología de la Información,Director de Marketing B2B,Tech Decision Makers,2026-08-22,Sí,Sí,Sí,2026-08-25,Sí,2026-08-29,Calificada,Buscan escalar generación de demanda en EE.UU. y México.
+LD-1013,Globant Digital Studios,Argentina,IT Services,Head of Growth & Marketing,Tech Decision Makers,2026-08-24,Sí,Sí,Sí,2026-08-26,No,,,
+LD-1014,Cencosud Retail Group,Chile,Retail,Gerente de Marketing,Retail & E-commerce Q3,2026-08-26,Sí,Sí,Sí,2026-08-28,Sí,2026-09-01,Descalificada,Equipo comercial menor a 3 personas, fuera del ICP enterprise.
+LD-1015,Falabella Corporativo,Chile,Comercio Minorista,Director Comercial,Retail & E-commerce Q3,2026-08-28,Sí,Sí,No,,,,
+LD-1016,MercadoLibre B2B Sellers,Argentina,E-commerce & Retail,Head of Sales,Retail & E-commerce Q3,2026-08-30,Sí,Sí,Sí,2026-09-02,Sí,2026-09-05,Calificada,Alto volumen de prospección saliente. Solicitaron cotización anual para 40 licencias.
+LD-1017,Laboratorios Pisa,México,Salud y Farmacéutica,Gerente Comercial,Healthcare & Pharma,2026-09-01,Sí,No,No,,,,
+LD-1018,Clínica Alemana B2B,Chile,Healthcare,Director Comercial,Healthcare & Pharma,2026-09-03,Sí,Sí,Sí,2026-09-05,Sí,2026-09-09,,
+LD-1019,Sura Seguros y Finanzas,Colombia,Banca,Director de Marketing B2B,ABM Finanzas LATAM,2026-09-04,Sí,Sí,Sí,2026-09-07,Sí,2026-09-11,Calificada,Muy buena recepción del equipo de Growth. Piden segunda sesión con compras.
+LD-1020,Scotiabank Empresas,Perú,banking,Gerente Comercial,ABM Finanzas LATAM,2026-09-06,Sí,Sí,Sí,2026-09-09,No,,,
+LD-1021,Nubank Business,Brasil,Fintech & Banking,Head of Sales,ABM Finanzas LATAM,2026-09-08,Sí,Sí,Sí,2026-09-11,Sí,2026-09-15,Calificada,Interés inmediato en analítica de conversión de campañas B2B.
+LD-1022,Arca Continental Bebidas,México,manufactura de alimentos,Director Comercial,Industrial Manufacturing 2026,2026-09-10,Sí,Sí,Sí,2026-09-12,Sí,2026-09-16,,
+LD-1023,Cristalerías de Chile,Chile,fabricación de artículos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-09-11,Sí,Sí,Sí,2026-09-14,No,,,
+LD-1024,Rassini Componentes,México,manufactura automotriz,VP de Ventas,Industrial Manufacturing 2026,2026-09-13,Sí,Sí,Sí,2026-09-16,Sí,2026-09-19,Calificada,Proyecto estratégico para digitalizar fuerza de ventas industrial en 2026.
+LD-1025,Kavak B2B Fleet,México,E-commerce & Retail,Director Comercial,Retail & E-commerce Q3,2026-09-15,Sí,Sí,Sí,2026-09-18,Sí,2026-09-22,Descalificada,Prioridades congeladas este trimestre por reestructuración interna.
+LD-1026,KIO Networks,México,Tecnología de la Información,CTO,Tech Decision Makers,2026-09-17,Sí,Sí,Sí,2026-09-20,Sí,2026-09-24,Calificada,Reunión calificada con VP de Preventa y CTO. Avanzan a prueba de concepto.
+LD-1027,SONDA IT Latam,Chile,IT Services,Gerente de TI,Tech Decision Makers,2026-09-19,Sí,Sí,Sí,2026-09-21,Sí,2026-09-25,,
+LD-1028,Rappi Cargo & Logistics,Colombia,Logística y Transporte,Head of Growth & Marketing,Logística & Supply Chain,2026-09-21,Sí,Sí,Sí,2026-09-23,No,,,
+LD-1029,DHL Supply Chain MX,México,Supply Chain & Logística,Director Comercial,Logística & Supply Chain,2026-09-23,Sí,Sí,Sí,2026-09-26,Sí,2026-09-30,Calificada,Cuentan con presupuesto regional. Quieren conectar reportes con su BI actual.
+LD-1030,Solistica Operaciones,Colombia,Logística y Transporte,Gerente Comercial,Logística & Supply Chain,2026-09-25,Sí,No,No,,,,
+LD-1031,Banco Itaú Empresas,Chile,Banca,VP de Ventas,ABM Finanzas LATAM,2026-09-27,Sí,Sí,Sí,2026-09-29,Sí,2026-10-02,,
+LD-1032,Credicorp Capital,Perú,Servicios Financieros,Director de Marketing B2B,ABM Finanzas LATAM,2026-09-29,Sí,Sí,Sí,2026-10-01,Sí,2026-10-05,Calificada,Enfocados en captación de clientes corporativos. Reunión de seguimiento el viernes.
+LD-1033,Alsea Food Service,México,manufactura de alimentos,CMO,Industrial Manufacturing 2026,2026-10-01,Sí,Sí,Sí,2026-10-03,No,,,
+LD-1034,Vitro Industrial,México,fabricación de artículos,Director Comercial,Industrial Manufacturing 2026,2026-10-03,Sí,Sí,Sí,2026-10-06,Sí,2026-10-09,,
+LD-1035,Magna Powertrain,México,manufactura automotriz,Gerente de Operaciones,Industrial Manufacturing 2026,2026-10-05,Sí,Sí,Sí,2026-10-08,Sí,2026-10-12,Calificada,Aprobado por dirección comercial para iniciar onboarding en noviembre.
+LD-1036,Indra Sistemas,España,Software & SaaS,Director de Tecnología,Tech Decision Makers,2026-10-06,Sí,Sí,Sí,2026-10-09,Sí,2026-10-13,Calificada,Excelente alineación con objetivos de generación de demanda en Europa y LATAM.
+LD-1037,Stefanini Group,Brasil,IT Services,Gerente Comercial,Tech Decision Makers,2026-10-08,Sí,Sí,Sí,2026-10-11,No,,,
+LD-1038,Farmacias del Ahorro Corp,México,Salud y Farmacéutica,Director de Marketing B2B,Healthcare & Pharma,2026-10-09,Sí,Sí,Sí,2026-10-12,Sí,2026-10-15,,
+LD-1039,TecSalud Empresarial,México,Healthcare,CEO,Healthcare & Pharma,2026-10-11,Sí,Sí,No,,,,
+LD-1040,Bimbo Bakeries USA,Estados Unidos,manufactura de alimentos,VP de Ventas,Industrial Manufacturing 2026,2026-10-12,Sí,Sí,Sí,2026-10-14,Sí,2026-10-17,Calificada,Expansión a mercado hispano en EE.UU. Ticket estimado de $45k ARR.
+LD-1041,Interbank Corporativo,Perú,banking,Director Comercial,ABM Finanzas LATAM,2026-10-13,Sí,Sí,Sí,2026-10-15,Sí,2026-10-18,,
+LD-1042,Davivienda Empresas,Colombia,Banca,Gerente de Marketing,ABM Finanzas LATAM,2026-10-14,Sí,Sí,Sí,2026-10-16,Sí,2026-10-20,Calificada,Reunión muy productiva con los líderes de producto B2B.
+LD-1043,Liverpool Corporativo,México,Comercio Minorista,Head of Sales,Retail & E-commerce Q3,2026-10-15,Sí,No,No,,,,
+LD-1044,Exito Grupo Empresarial,Colombia,Retail,Director Comercial,Retail & E-commerce Q3,2026-10-16,Sí,Sí,Sí,2026-10-18,No,,,
+LD-1045,Deel LATAM Expansion,Estados Unidos,Software & SaaS,Head of Growth & Marketing,Tech Decision Makers,2026-10-17,Sí,Sí,Sí,2026-10-19,Sí,2026-10-21,Calificada,Buscan optimizar tasas de conversión de SDRs en toda la región.
+LD-1046,Clara Corporate Spend,México,Fintech & Banking,CMO,ABM Finanzas LATAM,2026-10-18,Sí,Sí,Sí,2026-10-20,Sí,2026-10-22,,
+LD-1047,Carvajal Empaques,Colombia,fabricación de artículos,Director de Planta,Industrial Manufacturing 2026,2026-10-18,Sí,No,No,,,,
+LD-1048,Lear Corporation MX,México,manufactura automotriz,IT Manager,Industrial Manufacturing 2026,2026-10-19,No,No,No,,,,
+LD-1049,Bavaria SABMiller,Colombia,manufactura de alimentos,Gerente Comercial,Industrial Manufacturing 2026,2026-10-19,Sí,Sí,No,,,,
+LD-1050,Copa Airlines Cargo,Colombia,Logística y Transporte,Director Comercial,Logística & Supply Chain,2026-10-20,Sí,Sí,Sí,2026-10-21,Sí,2026-10-22,,
+LD-1051,Banco Galicia Empresas,Argentina,Banca,Gerente Comercial,ABM Finanzas LATAM,2026-08-05,No,No,No,,,,
+LD-1052,Abanca Corporativo,España,banking,Director Comercial,ABM Finanzas Iberia,2026-08-09,Sí,No,No,,,,
+LD-1053,Mabe Electrodomésticos,México,fabricación de artículos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-08-13,No,No,No,,,,
+LD-1054,Nestlé Professional,Chile,manufactura de alimentos,Head of Sales,Industrial Manufacturing 2026,2026-08-18,Sí,No,No,,,,
+LD-1055,Totvs Latam,Brasil,Software & SaaS,Director de Marketing B2B,Tech Decision Makers,2026-08-23,No,No,No,,,,
+LD-1056,Ripley Corp,Chile,Comercio Minorista,CMO,Retail & E-commerce Q3,2026-08-29,No,No,No,,,,
+LD-1057,Sanofi Industrial,México,Salud y Farmacéutica,Gerente de TI,Healthcare & Pharma,2026-09-02,No,No,No,,,,
+LD-1058,Coordinadora Mercantil,Colombia,Supply Chain & Logística,Gerente de Operaciones,Logística & Supply Chain,2026-09-07,Sí,No,No,,,,
+LD-1059,Banesco Internacional,España,Servicios Financieros,CTO,ABM Finanzas Iberia,2026-09-12,No,No,No,,,,
+LD-1060,Pirelli Neumáticos,México,manufactura automotriz,Director Comercial,Industrial Manufacturing 2026,2026-09-18,Sí,No,No,,,,
+LD-1061,Bimbo Colombia,Colombia,manufactura de alimentos,Gerente de Marketing,Industrial Manufacturing 2026,2026-09-24,No,No,No,,,,
+LD-1062,VTEX Commerce,Brasil,E-commerce & Retail,VP de Ventas,Retail & E-commerce Q3,2026-09-28,Sí,Sí,No,,,,
+LD-1063,Roche Diagnostics,Perú,Healthcare,Director Comercial,Healthcare & Pharma,2026-10-04,No,No,No,,,,
+LD-1064,Blue Express,Chile,Logística y Transporte,CEO,Logística & Supply Chain,2026-10-10,Sí,No,No,,,,`;
