@@ -1,43 +1,55 @@
-export type QualificationStatus = 'Calificada' | 'Descalificada' | 'Pendiente';
+export type EtapaMTIStatus = 'Califica' | 'No califica' | 'Pendiente';
+export type EtapaComercialStatus = 'Pipeline' | 'Presupuesto' | 'Perdida' | 'Ganada' | 'Sin etapa';
+export type DashboardViewMode = 'standard' | 'advanced' | 'infographic';
 
 export interface LeadRecord {
   id: string;
-  empresa: string;
   pais: string;
+  fechaEnvioConexion: string; // YYYY-MM-DD
+  empresa: string;
+  tamanoEmpresa: string;
   industriaOriginal: string;
   industria: string;
+  linkedin: string;
+  nombre: string;
   cargoOriginal: string;
   cargo: string;
-  campana: string;
-  fechaEjecucion: string; // YYYY-MM-DD
-  aceptado: boolean;
-  respondio: boolean;
-  interesado: boolean;
-  fechaInteres: string; // YYYY-MM-DD or ''
-  reunionAgendada: boolean;
-  fechaReunion: string; // YYYY-MM-DD or ''
-  calificacion: QualificationStatus;
-  feedback: string;
+  estado1Acepto: boolean;
+  estado2Intereso: boolean;
+  estado3Reunion: boolean;
+  fechaAceptacion: string;
+  respuestaContacto: string;
+  fechaInteresado: string;
+  fechaConfirmacionReunion: string;
+  fechaEjecucionReunion: string;
+  feedbackReunion: string;
+  etapaMTI: EtapaMTIStatus;
+  etapaComercial: EtapaComercialStatus;
 }
 
 export interface ColumnMapping {
-  empresa: string;
   pais: string;
+  fechaEnvioConexion: string;
+  empresa: string;
+  tamanoEmpresa: string;
   industria: string;
+  linkedin: string;
+  nombre: string;
   cargo: string;
-  campana: string;
-  fechaEjecucion: string;
-  aceptado: string;
-  respondio: string;
-  interesado: string;
-  fechaInteres: string;
-  reunionAgendada: string;
-  fechaReunion: string;
-  calificacion: string;
-  feedback: string;
+  estado1Acepto: string;
+  estado2Intereso: string;
+  estado3Reunion: string;
+  fechaAceptacion: string;
+  respuestaContacto: string;
+  fechaInteresado: string;
+  fechaConfirmacionReunion: string;
+  fechaEjecucionReunion: string;
+  feedbackReunion: string;
+  etapaMTI: string;
+  etapaComercial: string;
 }
 
-export type MergeableField = 'industria' | 'cargo' | 'pais';
+export type MergeableField = 'industria' | 'cargo' | 'pais' | 'tamanoEmpresa';
 
 export interface MergeRule {
   id: string;
@@ -56,39 +68,69 @@ export interface SemanticSuggestion {
 }
 
 export interface GlobalFilterState {
-  datePreset: 'all' | 'last30' | 'quarter' | 'month' | 'custom';
+  datePreset: 'all' | 'week' | 'month' | 'custom';
   startDate: string;
   endDate: string;
   comparePreviousPeriod: boolean;
   selectedCountry: string;
   selectedIndustry: string;
   selectedRole: string;
-  selectedCampaign: string;
+  selectedStage: string;
   searchQuery: string;
+}
+
+export interface WidgetVisibilityState {
+  kpis: boolean;
+  meetingsTable: boolean;
+  interestedTable: boolean;
+  countriesChart: boolean;
+  industriesChart: boolean;
+  rolesChart: boolean;
+  qualificationGauge: boolean;
+  timelineChart: boolean;
+  commercialStages: boolean;
+}
+
+export interface BrandingConfig {
+  clientName: string;
+  clientLogoUrl: string;
+  agencyName: string;
+  agencyLogoUrl: string;
+}
+
+export interface WeeklyReportData {
+  weekTitle: string;
+  dateRangeLabel: string;
+  whatWasDone: string[];
+  currentPlan: string[];
+  nextSteps: string[];
+  clientQueries: string[];
 }
 
 export interface KPIMetric {
   id: string;
   label: string;
-  rate: number; // Percentage 0..100
+  formulaLabel: string;
+  rate: number;
   numerator: number;
   denominator: number;
   numeratorLabel: string;
   denominatorLabel: string;
   previousRate: number;
-  deltaPercent: number; // e.g., +14.2 or -5.1
+  deltaPercent: number;
   sparkline: number[];
 }
 
 export interface DashboardAggregations {
-  totalLeads: number;
+  totalSent: number;
   totalAccepted: number;
   totalReplied: number;
   totalInterested: number;
-  totalMeetings: number;
-  totalQualified: number;
-  totalDisqualified: number;
-  totalPendingFeedback: number;
+  totalMeetingsBooked: number;
+  totalMeetingsExecuted: number;
+  totalQualifiedMTI: number;
+  totalDisqualifiedMTI: number;
+  totalPendingMTI: number;
   kpis: {
     acceptanceRate: KPIMetric;
     responseRate: KPIMetric;
@@ -116,17 +158,18 @@ export interface DashboardAggregations {
     calificadas: number;
     conversionRate: number;
   }[];
+  commercialStageBreakdown: {
+    stage: EtapaComercialStatus;
+    count: number;
+    percentage: number;
+    color: string;
+  }[];
   timelineSeries: {
     period: string;
     label: string;
-    contactados: number;
+    enviados: number;
     interesados: number;
     reuniones: number;
     calificadas: number;
-  }[];
-  funnelCapabilities: {
-    dimension: string;
-    current: number;
-    benchmark: number;
   }[];
 }

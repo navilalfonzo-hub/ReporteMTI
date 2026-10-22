@@ -1,67 +1,79 @@
-import { ColumnMapping, LeadRecord, QualificationStatus } from '../types/dashboard';
+import { ColumnMapping, EtapaComercialStatus, EtapaMTIStatus, LeadRecord } from '../types/dashboard';
 
-const COLUMN_PATTERNS: Record<keyof ColumnMapping, RegExp[]> = {
-  empresa: [/empresa/i, /company/i, /cuenta/i, /account/i, /organiza/i, /cliente/i, /nombre.*empresa/i],
-  pais: [/pa[ií]s/i, /country/i, /ubicaci[oó]n/i, /region/i, /mercado/i, /location/i],
-  industria: [/industria/i, /industry/i, /sector/i, /vertical/i, /rubro/i, /giro/i, /categor[ií]a/i],
-  cargo: [/cargo/i, /title/i, /puesto/i, /rol/i, /posici[oó]n/i, /job/i, /ocupaci[oó]n/i],
-  campana: [/campa[ñn]a/i, /campaign/i, /canal/i, /sdr/i, /ejecutivo/i, /origen/i, /source/i],
-  fechaEjecucion: [/fecha.*ejecuci[oó]n/i, /execution.*date/i, /fecha.*env[ií]o/i, /fecha.*contacto/i, /created/i, /^fecha$/i, /date/i],
-  aceptado: [/aceptad[oa]/i, /accepted/i, /invitaci[oó]n.*aceptada/i, /conectado/i, /connected/i, /aceptaci[oó]n/i],
-  respondio: [/respondi[oó]/i, /replied/i, /respuesta/i, /response/i, /contest[oó]/i],
-  interesado: [/interesad[oa]/i, /interested/i, /^inter[eé]s$/i, /lead.*positivo/i, /oportunidad/i],
-  fechaInteres: [/fecha.*inter[eé]s/i, /interest.*date/i, /fecha.*respuesta/i, /fecha.*lead/i],
-  reunionAgendada: [/reuni[oó]n.*agendada/i, /meeting.*booked/i, /^reuni[oó]n$/i, /agendad[oa]/i, /cita/i, /meeting/i],
-  fechaReunion: [/fecha.*reuni[oó]n/i, /meeting.*date/i, /fecha.*cita/i, /fecha.*agenda/i],
-  calificacion: [/calificaci[oó]n/i, /qualified/i, /estado.*reuni[oó]n/i, /estatus.*reuni[oó]n/i, /evaluaci[oó]n/i, /calificad[oa]/i],
-  feedback: [/feedback/i, /comentario/i, /notas/i, /observaci[oó]n/i, /notes/i, /detalle.*reuni[oó]n/i],
+export const COLUMN_PATTERNS: Record<keyof ColumnMapping, RegExp[]> = {
+  pais: [/pa[ií]s.*lead/i, /pa[ií]s/i, /country/i, /ubicaci[oó]n/i],
+  fechaEnvioConexion: [/fecha.*enviada.*conexi[oó]n/i, /fecha.*env[ií]o/i, /fecha.*conexi[oó]n/i, /^fecha\s*enviada/i],
+  empresa: [/^empresa$/i, /company/i, /organiza/i, /cuenta/i],
+  tamanoEmpresa: [/tama[ñn]o.*empresa/i, /company.*size/i, /empleados/i, /tama[ñn]o/i],
+  industria: [/industria.*empresa/i, /industria/i, /industry/i, /sector/i, /rubro/i],
+  linkedin: [/linkedin.*persona/i, /linkedin/i, /url.*perfil/i],
+  nombre: [/^nombre$/i, /nombre.*contacto/i, /full.*name/i, /persona/i],
+  cargo: [/^cargo$/i, /puesto/i, /job.*title/i, /rol/i, /posici[oó]n/i],
+  estado1Acepto: [/estado\s*1/i, /acept[oó].*conexi[oó]n/i, /invitaci[oó]n.*aceptada/i, /^aceptad[oa]$/i],
+  estado2Intereso: [/estado\s*2/i, /se\s*interes[oó]/i, /^interesad[oa]$/i],
+  estado3Reunion: [/estado\s*3/i, /di[oó]\s*reuni[oó]n/i, /reuni[oó]n.*agendada/i],
+  fechaAceptacion: [/fecha.*aceptaci[oó]n/i, /acceptance.*date/i],
+  respuestaContacto: [/respuesta.*contacto/i, /^respuesta/i, /replied/i, /mensaje.*respuesta/i],
+  fechaInteresado: [/fecha.*interesado/i, /fecha.*inter[eé]s/i],
+  fechaConfirmacionReunion: [/fecha.*confirmaci[oó]n.*reuni[oó]n/i, /fecha.*confirmaci[oó]n/i],
+  fechaEjecucionReunion: [/fecha.*ejecuci[oó]n.*reuni[oó]n/i, /fecha.*ejecuci[oó]n/i, /fecha.*reuni[oó]n/i],
+  feedbackReunion: [/feedback.*reuni[oó]n/i, /feedback/i, /comentarios/i, /notas/i],
+  etapaMTI: [/etapa.*mti/i, /califica.*no\s*califica/i, /calificaci[oó]n.*reuni[oó]n/i, /calificaci[oó]n/i],
+  etapaComercial: [/etapa.*comercial/i, /pipeline.*presupuesto/i, /estatus.*comercial/i],
 };
 
 export function autoDetectColumns(headers: string[]): ColumnMapping {
   const mapping: ColumnMapping = {
-    empresa: '',
     pais: '',
+    fechaEnvioConexion: '',
+    empresa: '',
+    tamanoEmpresa: '',
     industria: '',
+    linkedin: '',
+    nombre: '',
     cargo: '',
-    campana: '',
-    fechaEjecucion: '',
-    aceptado: '',
-    respondio: '',
-    interesado: '',
-    fechaInteres: '',
-    reunionAgendada: '',
-    fechaReunion: '',
-    calificacion: '',
-    feedback: '',
+    estado1Acepto: '',
+    estado2Intereso: '',
+    estado3Reunion: '',
+    fechaAceptacion: '',
+    respuestaContacto: '',
+    fechaInteresado: '',
+    fechaConfirmacionReunion: '',
+    fechaEjecucionReunion: '',
+    feedbackReunion: '',
+    etapaMTI: '',
+    etapaComercial: '',
   };
 
-  const usedHeaders = new Set<string>();
-
-  // Priority pass: match specific composite fields first (like fechaInteres, fechaReunion, fechaEjecucion)
+  const used = new Set<string>();
   const orderedKeys: (keyof ColumnMapping)[] = [
-    'empresa',
     'pais',
+    'fechaEnvioConexion',
+    'tamanoEmpresa',
     'industria',
+    'empresa',
+    'linkedin',
+    'nombre',
     'cargo',
-    'campana',
-    'fechaInteres',
-    'fechaReunion',
-    'fechaEjecucion',
-    'aceptado',
-    'respondio',
-    'interesado',
-    'reunionAgendada',
-    'calificacion',
-    'feedback',
+    'estado1Acepto',
+    'estado2Intereso',
+    'estado3Reunion',
+    'fechaAceptacion',
+    'respuestaContacto',
+    'fechaInteresado',
+    'fechaConfirmacionReunion',
+    'fechaEjecucionReunion',
+    'feedbackReunion',
+    'etapaMTI',
+    'etapaComercial',
   ];
 
   for (const key of orderedKeys) {
-    const patterns = COLUMN_PATTERNS[key];
-    for (const pattern of patterns) {
-      const match = headers.find((h) => !usedHeaders.has(h) && pattern.test(h.trim()));
+    for (const rx of COLUMN_PATTERNS[key]) {
+      const match = headers.find((h) => !used.has(h) && rx.test(h.trim()));
       if (match) {
         mapping[key] = match;
-        usedHeaders.add(match);
+        used.add(match);
         break;
       }
     }
@@ -73,14 +85,12 @@ export function autoDetectColumns(headers: string[]): ColumnMapping {
 export function parseTruthyValue(val: unknown): boolean {
   if (val === null || val === undefined) return false;
   const s = String(val).trim().toLowerCase();
-  if (!s) return false;
-  if (['no', 'false', '0', 'n', 'rechazado', 'none', 'null', 'n/a', '-'].includes(s)) {
+  if (!s || ['no', 'false', '0', 'n', 'rechazado', 'none', 'null', 'n/a', '-', 'no califica'].includes(s)) {
     return false;
   }
-  if (['sí', 'si', 'yes', 'true', '1', 'y', 's', 'ok', 'aceptado', 'agendada', 'interesado', 'respondió', 'respondio'].includes(s)) {
+  if (['sí', 'si', 'yes', 'true', '1', 'y', 's', 'ok', 'aceptado', 'aceptó', 'acepto', 'interesado', 'agendada', 'dió reunión', 'dio reunion'].includes(s)) {
     return true;
   }
-  // If it's a valid date string in a date/status column, treat as true
   if (/^\d{4}-\d{2}-\d{2}/.test(s) || /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(s)) {
     return true;
   }
@@ -91,41 +101,35 @@ export function normalizeDateString(val: unknown): string {
   if (!val) return '';
   const raw = String(val).trim();
   if (!raw) return '';
-
-  // Already YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-    return raw.slice(0, 10);
-  }
-
-  // DD/MM/YYYY or DD-MM-YYYY
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
   const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
-  if (dmy) {
-    const day = dmy[1].padStart(2, '0');
-    const month = dmy[2].padStart(2, '0');
-    const year = dmy[3];
-    return `${year}-${month}-${day}`;
-  }
-
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
   const parsed = new Date(raw);
-  if (!isNaN(parsed.getTime())) {
-    return parsed.toISOString().slice(0, 10);
-  }
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
   return '';
 }
 
-export function parseQualificationStatus(val: unknown): QualificationStatus {
+export function parseEtapaMTI(val: unknown): EtapaMTIStatus {
   if (!val) return 'Pendiente';
   const s = String(val).trim().toLowerCase();
-  if (!s || s === 'pendiente' || s === 'pending' || s === 'sin calificar' || s === '-') {
-    return 'Pendiente';
+  if (!s || s === 'pendiente' || s === 'pending' || s === '-') return 'Pendiente';
+  if (s.includes('no califica') || s.includes('descalificad') || s === 'no' || s === 'rechazada') {
+    return 'No califica';
   }
-  if (s.includes('descalificad') || s.includes('disqualif') || s.includes('no califica') || s === 'no' || s === 'rechazada') {
-    return 'Descalificada';
-  }
-  if (s.includes('calificad') || s.includes('qualif') || s === 'sí' || s === 'si' || s === 'yes' || s === 'aprobada') {
-    return 'Calificada';
+  if (s.includes('califica') || s === 'sí' || s === 'si' || s === 'aprobada') {
+    return 'Califica';
   }
   return 'Pendiente';
+}
+
+export function parseEtapaComercial(val: unknown): EtapaComercialStatus {
+  if (!val) return 'Sin etapa';
+  const s = String(val).trim().toLowerCase();
+  if (s.includes('ganad') || s.includes('won') || s.includes('cerrad')) return 'Ganada';
+  if (s.includes('perdid') || s.includes('lost') || s.includes('descart')) return 'Perdida';
+  if (s.includes('presupuesto') || s.includes('propuesta') || s.includes('cotiza') || s.includes('budget')) return 'Presupuesto';
+  if (s.includes('pipeline') || s.includes(' descubrimiento') || s.includes('proceso') || s.includes('activa')) return 'Pipeline';
+  return 'Sin etapa';
 }
 
 export function buildLeadsFromRawRows(
@@ -133,58 +137,62 @@ export function buildLeadsFromRawRows(
   mapping: ColumnMapping
 ): LeadRecord[] {
   return rows
-    .filter((row) => {
-      const hasAnyValue = Object.values(row).some((v) => v !== null && v !== undefined && String(v).trim() !== '');
-      return hasAnyValue;
-    })
+    .filter((row) => Object.values(row).some((v) => v !== null && v !== undefined && String(v).trim() !== ''))
     .map((row, idx) => {
-      const empresa = String(row[mapping.empresa] ?? `Empresa #${idx + 1}`).trim() || `Empresa #${idx + 1}`;
       const pais = String(row[mapping.pais] ?? 'Sin especificar').trim() || 'Sin especificar';
+      const fechaEnvioConexion = normalizeDateString(row[mapping.fechaEnvioConexion]) || '2026-10-01';
+      const empresa = String(row[mapping.empresa] ?? `Empresa #${idx + 1}`).trim() || `Empresa #${idx + 1}`;
+      const tamanoEmpresa = String(row[mapping.tamanoEmpresa] ?? 'No especificado').trim() || 'No especificado';
       const industriaRaw = String(row[mapping.industria] ?? 'General').trim() || 'General';
+      const linkedin = String(row[mapping.linkedin] ?? '').trim();
+      const nombre = String(row[mapping.nombre] ?? `Contacto #${idx + 1}`).trim() || `Contacto #${idx + 1}`;
       const cargoRaw = String(row[mapping.cargo] ?? 'Ejecutivo').trim() || 'Ejecutivo';
-      const campana = mapping.campana ? String(row[mapping.campana] ?? 'General').trim() || 'General' : 'Campaña General';
 
-      const fechaEjecucion = normalizeDateString(row[mapping.fechaEjecucion]) || '2026-09-15';
-      const fechaInteres = normalizeDateString(row[mapping.fechaInteres]);
-      const fechaReunion = normalizeDateString(row[mapping.fechaReunion]);
+      const fechaAceptacion = normalizeDateString(row[mapping.fechaAceptacion]);
+      const respuestaContacto = String(row[mapping.respuestaContacto] ?? '').trim();
+      const fechaInteresado = normalizeDateString(row[mapping.fechaInteresado]);
+      const fechaConfirmacionReunion = normalizeDateString(row[mapping.fechaConfirmacionReunion]);
+      const fechaEjecucionReunion = normalizeDateString(row[mapping.fechaEjecucionReunion]);
 
-      const interesado = mapping.interesado
-        ? parseTruthyValue(row[mapping.interesado]) || Boolean(fechaInteres)
-        : Boolean(fechaInteres);
+      const estado3Reunion = mapping.estado3Reunion
+        ? parseTruthyValue(row[mapping.estado3Reunion]) || Boolean(fechaConfirmacionReunion) || Boolean(fechaEjecucionReunion)
+        : Boolean(fechaConfirmacionReunion) || Boolean(fechaEjecucionReunion);
 
-      const reunionAgendada = mapping.reunionAgendada
-        ? parseTruthyValue(row[mapping.reunionAgendada]) || Boolean(fechaReunion)
-        : Boolean(fechaReunion);
+      const estado2Intereso = mapping.estado2Intereso
+        ? parseTruthyValue(row[mapping.estado2Intereso]) || Boolean(fechaInteresado) || estado3Reunion
+        : Boolean(fechaInteresado) || estado3Reunion;
 
-      const respondio = mapping.respondio
-        ? parseTruthyValue(row[mapping.respondio]) || interesado || reunionAgendada
-        : interesado || reunionAgendada;
+      const estado1Acepto = mapping.estado1Acepto
+        ? parseTruthyValue(row[mapping.estado1Acepto]) || Boolean(fechaAceptacion) || Boolean(respuestaContacto) || estado2Intereso
+        : Boolean(fechaAceptacion) || Boolean(respuestaContacto) || estado2Intereso;
 
-      const aceptado = mapping.aceptado
-        ? parseTruthyValue(row[mapping.aceptado]) || respondio
-        : respondio;
-
-      const calificacion = parseQualificationStatus(row[mapping.calificacion]);
-      const feedback = mapping.feedback ? String(row[mapping.feedback] ?? '').trim() : '';
+      const feedbackReunion = String(row[mapping.feedbackReunion] ?? '').trim();
+      const etapaMTI = parseEtapaMTI(row[mapping.etapaMTI]);
+      const etapaComercial = parseEtapaComercial(row[mapping.etapaComercial]);
 
       return {
         id: String(row['ID'] ?? row['id'] ?? `LD-${1001 + idx}`),
-        empresa,
         pais,
+        fechaEnvioConexion,
+        empresa,
+        tamanoEmpresa,
         industriaOriginal: industriaRaw,
         industria: industriaRaw,
+        linkedin,
+        nombre,
         cargoOriginal: cargoRaw,
         cargo: cargoRaw,
-        campana,
-        fechaEjecucion,
-        aceptado,
-        respondio,
-        interesado,
-        fechaInteres: interesado ? (fechaInteres || fechaEjecucion) : '',
-        reunionAgendada,
-        fechaReunion: reunionAgendada ? (fechaReunion || fechaInteres || fechaEjecucion) : '',
-        calificacion,
-        feedback,
+        estado1Acepto,
+        estado2Intereso,
+        estado3Reunion,
+        fechaAceptacion: estado1Acepto ? (fechaAceptacion || fechaEnvioConexion) : '',
+        respuestaContacto,
+        fechaInteresado: estado2Intereso ? (fechaInteresado || fechaAceptacion || fechaEnvioConexion) : '',
+        fechaConfirmacionReunion: estado3Reunion ? (fechaConfirmacionReunion || fechaInteresado || fechaEnvioConexion) : '',
+        fechaEjecucionReunion: estado3Reunion ? (fechaEjecucionReunion || fechaConfirmacionReunion || fechaEnvioConexion) : '',
+        feedbackReunion,
+        etapaMTI,
+        etapaComercial: estado3Reunion && etapaComercial === 'Sin etapa' ? 'Pipeline' : etapaComercial,
       };
     });
 }
