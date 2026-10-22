@@ -1,0 +1,2144 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTI Analytics | Dashboard Ejecutivo B2B & Generación de Demanda</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN for instant zero-build execution -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            },
+            boxShadow: {
+              'card': '0 2px 12px -2px rgba(16, 24, 40, 0.05), 0 1px 4px -1px rgba(16, 24, 40, 0.03)',
+              'card-hover': '0 10px 26px -4px rgba(59, 110, 246, 0.12), 0 2px 8px -2px rgba(16, 24, 40, 0.05)',
+            }
+          }
+        }
+      };
+    </script>
+    <!-- React 18, ReactDOM 18, PapaParse, and Babel Standalone for direct browser execution -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: #F4F6FA;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F1F5F9;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+      }
+    </style>
+  </head>
+  <body class="bg-[#F4F6FA] text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useMemo, useRef } = React;
+
+      // ==========================================
+      // 1. SAMPLE B2B CSV DATASET
+      // ==========================================
+      const SAMPLE_CSV_CONTENT = `ID,Empresa,Pais,Industria,Cargo,Campana,Fecha_Ejecucion,Invitacion_Aceptada,Respondio,Interesado,Fecha_Interes,Reunion_Agendada,Fecha_Reunion,Calificacion_Reunion,Feedback_Reunion
+LD-1001,Grupo Financiero Azteca,México,Banca,Director Comercial,Outbound Enterprise Q3,2026-08-03,Sí,Sí,Sí,2026-08-05,Sí,2026-08-08,Calificada,Presupuesto aprobado para Q4. Buscan automatizar prospección regional con 15 SDRs.
+LD-1002,BBVA Corporate Solutions,España,banking,VP de Ventas,ABM Finanzas Iberia,2026-08-04,Sí,Sí,Sí,2026-08-07,Sí,2026-08-11,Calificada,Excelente fit técnico. Solicitaron propuesta comercial para 3 unidades de negocio.
+LD-1003,Bancolombia Inversiones,Colombia,Servicios Financieros,Gerente de Marketing,Outbound Enterprise Q3,2026-08-06,Sí,Sí,Sí,2026-08-09,Sí,2026-08-14,,
+LD-1004,Banco de Crédito BCP,Perú,banca,CMO,ABM Finanzas LATAM,2026-08-08,Sí,Sí,Sí,2026-08-10,No,,,
+LD-1005,Santander Digital Tech,Chile,Fintech & Banking,Director de Tecnología,ABM Finanzas LATAM,2026-08-10,Sí,Sí,Sí,2026-08-13,Sí,2026-08-18,Calificada,Interesados en integración API con su CRM corporativo. Demo técnica agendada.
+LD-1006,Nemak Automotive Components,México,manufactura automotriz,Director de Planta,Industrial Manufacturing 2026,2026-08-12,Sí,Sí,Sí,2026-08-15,Sí,2026-08-19,,
+LD-1007,Grupo Bimbo Operaciones,México,manufactura de alimentos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-08-14,Sí,Sí,Sí,2026-08-16,Sí,2026-08-21,Calificada,Necesitan visibilidad de pipeline B2B para distribuidores mayoristas en Norteamérica.
+LD-1008,Envases Universales S.A.,Colombia,fabricación de artículos,Director Comercial,Industrial Manufacturing 2026,2026-08-15,Sí,Sí,Sí,2026-08-18,Sí,2026-08-22,Descalificada,Contrato vigente con proveedor actual hasta mediados del próximo año. Retomar en 6 meses.
+LD-1009,Metalsa Estructuras,México,manufactura automotriz,Gerente Comercial,Industrial Manufacturing 2026,2026-08-17,Sí,Sí,Sí,2026-08-20,No,,,
+LD-1010,Alicorp Industrial,Perú,manufactura de alimentos,VP de Ventas,Industrial Manufacturing 2026,2026-08-19,Sí,Sí,Sí,2026-08-22,Sí,2026-08-25,,
+LD-1011,CloudWare Solutions,Colombia,Software & SaaS,CEO,Tech Decision Makers,2026-08-21,Sí,Sí,Sí,2026-08-23,Sí,2026-08-27,Calificada,Decisor final en la llamada. Quiere arrancar piloto de 60 días en septiembre.
+LD-1012,Softtek Enterprise,México,Tecnología de la Información,Director de Marketing B2B,Tech Decision Makers,2026-08-22,Sí,Sí,Sí,2026-08-25,Sí,2026-08-29,Calificada,Buscan escalar generación de demanda en EE.UU. y México.
+LD-1013,Globant Digital Studios,Argentina,IT Services,Head of Growth & Marketing,Tech Decision Makers,2026-08-24,Sí,Sí,Sí,2026-08-26,No,,,
+LD-1014,Cencosud Retail Group,Chile,Retail,Gerente de Marketing,Retail & E-commerce Q3,2026-08-26,Sí,Sí,Sí,2026-08-28,Sí,2026-09-01,Descalificada,Equipo comercial menor a 3 personas, fuera del ICP enterprise.
+LD-1015,Falabella Corporativo,Chile,Comercio Minorista,Director Comercial,Retail & E-commerce Q3,2026-08-28,Sí,Sí,No,,,,
+LD-1016,MercadoLibre B2B Sellers,Argentina,E-commerce & Retail,Head of Sales,Retail & E-commerce Q3,2026-08-30,Sí,Sí,Sí,2026-09-02,Sí,2026-09-05,Calificada,Alto volumen de prospección saliente. Solicitaron cotización anual para 40 licencias.
+LD-1017,Laboratorios Pisa,México,Salud y Farmacéutica,Gerente Comercial,Healthcare & Pharma,2026-09-01,Sí,No,No,,,,
+LD-1018,Clínica Alemana B2B,Chile,Healthcare,Director Comercial,Healthcare & Pharma,2026-09-03,Sí,Sí,Sí,2026-09-05,Sí,2026-09-09,,
+LD-1019,Sura Seguros y Finanzas,Colombia,Banca,Director de Marketing B2B,ABM Finanzas LATAM,2026-09-04,Sí,Sí,Sí,2026-09-07,Sí,2026-09-11,Calificada,Muy buena recepción del equipo de Growth. Piden segunda sesión con compras.
+LD-1020,Scotiabank Empresas,Perú,banking,Gerente Comercial,ABM Finanzas LATAM,2026-09-06,Sí,Sí,Sí,2026-09-09,No,,,
+LD-1021,Nubank Business,Brasil,Fintech & Banking,Head of Sales,ABM Finanzas LATAM,2026-09-08,Sí,Sí,Sí,2026-09-11,Sí,2026-09-15,Calificada,Interés inmediato en analítica de conversión de campañas B2B.
+LD-1022,Arca Continental Bebidas,México,manufactura de alimentos,Director Comercial,Industrial Manufacturing 2026,2026-09-10,Sí,Sí,Sí,2026-09-12,Sí,2026-09-16,,
+LD-1023,Cristalerías de Chile,Chile,fabricación de artículos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-09-11,Sí,Sí,Sí,2026-09-14,No,,,
+LD-1024,Rassini Componentes,México,manufactura automotriz,VP de Ventas,Industrial Manufacturing 2026,2026-09-13,Sí,Sí,Sí,2026-09-16,Sí,2026-09-19,Calificada,Proyecto estratégico para digitalizar fuerza de ventas industrial en 2026.
+LD-1025,Kavak B2B Fleet,México,E-commerce & Retail,Director Comercial,Retail & E-commerce Q3,2026-09-15,Sí,Sí,Sí,2026-09-18,Sí,2026-09-22,Descalificada,Prioridades congeladas este trimestre por reestructuración interna.
+LD-1026,KIO Networks,México,Tecnología de la Información,CTO,Tech Decision Makers,2026-09-17,Sí,Sí,Sí,2026-09-20,Sí,2026-09-24,Calificada,Reunión calificada con VP de Preventa y CTO. Avanzan a prueba de concepto.
+LD-1027,SONDA IT Latam,Chile,IT Services,Gerente de TI,Tech Decision Makers,2026-09-19,Sí,Sí,Sí,2026-09-21,Sí,2026-09-25,,
+LD-1028,Rappi Cargo & Logistics,Colombia,Logística y Transporte,Head of Growth & Marketing,Logística & Supply Chain,2026-09-21,Sí,Sí,Sí,2026-09-23,No,,,
+LD-1029,DHL Supply Chain MX,México,Supply Chain & Logística,Director Comercial,Logística & Supply Chain,2026-09-23,Sí,Sí,Sí,2026-09-26,Sí,2026-09-30,Calificada,Cuentan con presupuesto regional. Quieren conectar reportes con su BI actual.
+LD-1030,Solistica Operaciones,Colombia,Logística y Transporte,Gerente Comercial,Logística & Supply Chain,2026-09-25,Sí,No,No,,,,
+LD-1031,Banco Itaú Empresas,Chile,Banca,VP de Ventas,ABM Finanzas LATAM,2026-09-27,Sí,Sí,Sí,2026-09-29,Sí,2026-10-02,,
+LD-1032,Credicorp Capital,Perú,Servicios Financieros,Director de Marketing B2B,ABM Finanzas LATAM,2026-09-29,Sí,Sí,Sí,2026-10-01,Sí,2026-10-05,Calificada,Enfocados en captación de clientes corporativos. Reunión de seguimiento el viernes.
+LD-1033,Alsea Food Service,México,manufactura de alimentos,CMO,Industrial Manufacturing 2026,2026-10-01,Sí,Sí,Sí,2026-10-03,No,,,
+LD-1034,Vitro Industrial,México,fabricación de artículos,Director Comercial,Industrial Manufacturing 2026,2026-10-03,Sí,Sí,Sí,2026-10-06,Sí,2026-10-09,,
+LD-1035,Magna Powertrain,México,manufactura automotriz,Gerente de Operaciones,Industrial Manufacturing 2026,2026-10-05,Sí,Sí,Sí,2026-10-08,Sí,2026-10-12,Calificada,Aprobado por dirección comercial para iniciar onboarding en noviembre.
+LD-1036,Indra Sistemas,España,Software & SaaS,Director de Tecnología,Tech Decision Makers,2026-10-06,Sí,Sí,Sí,2026-10-09,Sí,2026-10-13,Calificada,Excelente alineación con objetivos de generación de demanda en Europa y LATAM.
+LD-1037,Stefanini Group,Brasil,IT Services,Gerente Comercial,Tech Decision Makers,2026-10-08,Sí,Sí,Sí,2026-10-11,No,,,
+LD-1038,Farmacias del Ahorro Corp,México,Salud y Farmacéutica,Director de Marketing B2B,Healthcare & Pharma,2026-10-09,Sí,Sí,Sí,2026-10-12,Sí,2026-10-15,,
+LD-1039,TecSalud Empresarial,México,Healthcare,CEO,Healthcare & Pharma,2026-10-11,Sí,Sí,No,,,,
+LD-1040,Bimbo Bakeries USA,Estados Unidos,manufactura de alimentos,VP de Ventas,Industrial Manufacturing 2026,2026-10-12,Sí,Sí,Sí,2026-10-14,Sí,2026-10-17,Calificada,Expansión a mercado hispano en EE.UU. Ticket estimado de $45k ARR.
+LD-1041,Interbank Corporativo,Perú,banking,Director Comercial,ABM Finanzas LATAM,2026-10-13,Sí,Sí,Sí,2026-10-15,Sí,2026-10-18,,
+LD-1042,Davivienda Empresas,Colombia,Banca,Gerente de Marketing,ABM Finanzas LATAM,2026-10-14,Sí,Sí,Sí,2026-10-16,Sí,2026-10-20,Calificada,Reunión muy productiva con los líderes de producto B2B.
+LD-1043,Liverpool Corporativo,México,Comercio Minorista,Head of Sales,Retail & E-commerce Q3,2026-10-15,Sí,No,No,,,,
+LD-1044,Exito Grupo Empresarial,Colombia,Retail,Director Comercial,Retail & E-commerce Q3,2026-10-16,Sí,Sí,Sí,2026-10-18,No,,,
+LD-1045,Deel LATAM Expansion,Estados Unidos,Software & SaaS,Head of Growth & Marketing,Tech Decision Makers,2026-10-17,Sí,Sí,Sí,2026-10-19,Sí,2026-10-21,Calificada,Buscan optimizar tasas de conversión de SDRs en toda la región.
+LD-1046,Clara Corporate Spend,México,Fintech & Banking,CMO,ABM Finanzas LATAM,2026-10-18,Sí,Sí,Sí,2026-10-20,Sí,2026-10-22,,
+LD-1047,Carvajal Empaques,Colombia,fabricación de artículos,Director de Planta,Industrial Manufacturing 2026,2026-10-18,Sí,No,No,,,,
+LD-1048,Lear Corporation MX,México,manufactura automotriz,IT Manager,Industrial Manufacturing 2026,2026-10-19,No,No,No,,,,
+LD-1049,Bavaria SABMiller,Colombia,manufactura de alimentos,Gerente Comercial,Industrial Manufacturing 2026,2026-10-19,Sí,Sí,No,,,,
+LD-1050,Copa Airlines Cargo,Colombia,Logística y Transporte,Director Comercial,Logística & Supply Chain,2026-10-20,Sí,Sí,Sí,2026-10-21,Sí,2026-10-22,,
+LD-1051,Banco Galicia Empresas,Argentina,Banca,Gerente Comercial,ABM Finanzas LATAM,2026-08-05,No,No,No,,,,
+LD-1052,Abanca Corporativo,España,banking,Director Comercial,ABM Finanzas Iberia,2026-08-09,Sí,No,No,,,,
+LD-1053,Mabe Electrodomésticos,México,fabricación de artículos,Gerente de Operaciones,Industrial Manufacturing 2026,2026-08-13,No,No,No,,,,
+LD-1054,Nestlé Professional,Chile,manufactura de alimentos,Head of Sales,Industrial Manufacturing 2026,2026-08-18,Sí,No,No,,,,
+LD-1055,Totvs Latam,Brasil,Software & SaaS,Director de Marketing B2B,Tech Decision Makers,2026-08-23,No,No,No,,,,
+LD-1056,Ripley Corp,Chile,Comercio Minorista,CMO,Retail & E-commerce Q3,2026-08-29,No,No,No,,,,
+LD-1057,Sanofi Industrial,México,Salud y Farmacéutica,Gerente de TI,Healthcare & Pharma,2026-09-02,No,No,No,,,,
+LD-1058,Coordinadora Mercantil,Colombia,Supply Chain & Logística,Gerente de Operaciones,Logística & Supply Chain,2026-09-07,Sí,No,No,,,,
+LD-1059,Banesco Internacional,España,Servicios Financieros,CTO,ABM Finanzas Iberia,2026-09-12,No,No,No,,,,
+LD-1060,Pirelli Neumáticos,México,manufactura automotriz,Director Comercial,Industrial Manufacturing 2026,2026-09-18,Sí,No,No,,,,
+LD-1061,Bimbo Colombia,Colombia,manufactura de alimentos,Gerente de Marketing,Industrial Manufacturing 2026,2026-09-24,No,No,No,,,,
+LD-1062,VTEX Commerce,Brasil,E-commerce & Retail,VP de Ventas,Retail & E-commerce Q3,2026-09-28,Sí,Sí,No,,,,
+LD-1063,Roche Diagnostics,Perú,Healthcare,Director Comercial,Healthcare & Pharma,2026-10-04,No,No,No,,,,
+LD-1064,Blue Express,Chile,Logística y Transporte,CEO,Logística & Supply Chain,2026-10-10,Sí,No,No,,,,`;
+
+      // ==========================================
+      // 2. COLUMN DETECTION & DATA PARSING
+      // ==========================================
+      const COLUMN_PATTERNS = {
+        empresa: [/empresa/i, /company/i, /cuenta/i, /account/i, /organiza/i, /cliente/i],
+        pais: [/pa[ií]s/i, /country/i, /ubicaci[oó]n/i, /region/i, /mercado/i],
+        industria: [/industria/i, /industry/i, /sector/i, /vertical/i, /rubro/i, /giro/i],
+        cargo: [/cargo/i, /title/i, /puesto/i, /rol/i, /posici[oó]n/i, /job/i],
+        campana: [/campa[ñn]a/i, /campaign/i, /canal/i, /sdr/i, /ejecutivo/i, /origen/i],
+        fechaEjecucion: [/fecha.*ejecuci[oó]n/i, /execution.*date/i, /fecha.*env[ií]o/i, /fecha.*contacto/i, /created/i, /^fecha$/i],
+        aceptado: [/aceptad[oa]/i, /accepted/i, /invitaci[oó]n.*aceptada/i, /conectado/i, /aceptaci[oó]n/i],
+        respondio: [/respondi[oó]/i, /replied/i, /respuesta/i, /response/i, /contest[oó]/i],
+        interesado: [/interesad[oa]/i, /interested/i, /^inter[eé]s$/i, /lead.*positivo/i],
+        fechaInteres: [/fecha.*inter[eé]s/i, /interest.*date/i, /fecha.*respuesta/i, /fecha.*lead/i],
+        reunionAgendada: [/reuni[oó]n.*agendada/i, /meeting.*booked/i, /^reuni[oó]n$/i, /agendad[oa]/i, /cita/i],
+        fechaReunion: [/fecha.*reuni[oó]n/i, /meeting.*date/i, /fecha.*cita/i, /fecha.*agenda/i],
+        calificacion: [/calificaci[oó]n/i, /qualified/i, /estado.*reuni[oó]n/i, /estatus.*reuni[oó]n/i, /evaluaci[oó]n/i],
+        feedback: [/feedback/i, /comentario/i, /notas/i, /observaci[oó]n/i, /notes/i],
+      };
+
+      function autoDetectColumns(headers) {
+        const mapping = {
+          empresa: '', pais: '', industria: '', cargo: '', campana: '',
+          fechaEjecucion: '', aceptado: '', respondio: '', interesado: '',
+          fechaInteres: '', reunionAgendada: '', fechaReunion: '', calificacion: '', feedback: ''
+        };
+        const used = new Set();
+        const orderedKeys = [
+          'empresa', 'pais', 'industria', 'cargo', 'campana',
+          'fechaInteres', 'fechaReunion', 'fechaEjecucion',
+          'aceptado', 'respondio', 'interesado', 'reunionAgendada', 'calificacion', 'feedback'
+        ];
+        for (const key of orderedKeys) {
+          for (const rx of COLUMN_PATTERNS[key]) {
+            const match = headers.find((h) => !used.has(h) && rx.test(h.trim()));
+            if (match) {
+              mapping[key] = match;
+              used.add(match);
+              break;
+            }
+          }
+        }
+        return mapping;
+      }
+
+      function parseTruthyValue(val) {
+        if (val === null || val === undefined) return false;
+        const s = String(val).trim().toLowerCase();
+        if (!s || ['no', 'false', '0', 'n', 'rechazado', 'none', 'null', 'n/a', '-'].includes(s)) return false;
+        if (['sí', 'si', 'yes', 'true', '1', 'y', 's', 'ok', 'aceptado', 'agendada', 'interesado', 'respondió', 'respondio'].includes(s)) return true;
+        if (/^\d{4}-\d{2}-\d{2}/.test(s) || /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(s)) return true;
+        return false;
+      }
+
+      function normalizeDateString(val) {
+        if (!val) return '';
+        const raw = String(val).trim();
+        if (!raw) return '';
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+        const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+        if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+        const parsed = new Date(raw);
+        if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+        return '';
+      }
+
+      function parseQualificationStatus(val) {
+        if (!val) return 'Pendiente';
+        const s = String(val).trim().toLowerCase();
+        if (!s || s === 'pendiente' || s === 'pending' || s === '-') return 'Pendiente';
+        if (s.includes('descalificad') || s.includes('disqualif') || s.includes('no califica') || s === 'no' || s === 'rechazada') return 'Descalificada';
+        if (s.includes('calificad') || s.includes('qualif') || s === 'sí' || s === 'si' || s === 'yes' || s === 'aprobada') return 'Calificada';
+        return 'Pendiente';
+      }
+
+      function buildLeadsFromRawRows(rows, mapping) {
+        return rows
+          .filter((row) => Object.values(row).some((v) => v !== null && v !== undefined && String(v).trim() !== ''))
+          .map((row, idx) => {
+            const empresa = String(row[mapping.empresa] ?? `Empresa #${idx + 1}`).trim() || `Empresa #${idx + 1}`;
+            const pais = String(row[mapping.pais] ?? 'Sin especificar').trim() || 'Sin especificar';
+            const industriaRaw = String(row[mapping.industria] ?? 'General').trim() || 'General';
+            const cargoRaw = String(row[mapping.cargo] ?? 'Ejecutivo').trim() || 'Ejecutivo';
+            const campana = mapping.campana ? String(row[mapping.campana] ?? 'General').trim() || 'General' : 'Campaña General';
+
+            const fechaEjecucion = normalizeDateString(row[mapping.fechaEjecucion]) || '2026-09-15';
+            const fechaInteres = normalizeDateString(row[mapping.fechaInteres]);
+            const fechaReunion = normalizeDateString(row[mapping.fechaReunion]);
+
+            const interesado = mapping.interesado ? parseTruthyValue(row[mapping.interesado]) || Boolean(fechaInteres) : Boolean(fechaInteres);
+            const reunionAgendada = mapping.reunionAgendada ? parseTruthyValue(row[mapping.reunionAgendada]) || Boolean(fechaReunion) : Boolean(fechaReunion);
+            const respondio = mapping.respondio ? parseTruthyValue(row[mapping.respondio]) || interesado || reunionAgendada : interesado || reunionAgendada;
+            const aceptado = mapping.aceptado ? parseTruthyValue(row[mapping.aceptado]) || respondio : respondio;
+
+            const calificacion = parseQualificationStatus(row[mapping.calificacion]);
+            const feedback = mapping.feedback ? String(row[mapping.feedback] ?? '').trim() : '';
+
+            return {
+              id: String(row['ID'] ?? row['id'] ?? `LD-${1001 + idx}`),
+              empresa,
+              pais,
+              industriaOriginal: industriaRaw,
+              industria: industriaRaw,
+              cargoOriginal: cargoRaw,
+              cargo: cargoRaw,
+              campana,
+              fechaEjecucion,
+              aceptado,
+              respondio,
+              interesado,
+              fechaInteres: interesado ? (fechaInteres || fechaEjecucion) : '',
+              reunionAgendada,
+              fechaReunion: reunionAgendada ? (fechaReunion || fechaInteres || fechaEjecucion) : '',
+              calificacion,
+              feedback,
+            };
+          });
+      }
+
+      // ==========================================
+      // 3. SMART MERGE (SEMANTIC + FUZZY MATCHING)
+      // ==========================================
+      const B2B_SEMANTIC_CLUSTERS = [
+        {
+          field: 'industria',
+          canonicalName: 'Banca / Servicios Financieros',
+          reason: 'Variaciones bilingües y sectoriales: Banking, Banca, Fintech y Servicios Financieros',
+          keywords: [/bank/i, /banca/i, /financ/i, /fintech/i, /seguros/i, /inversiones/i, /cr[eé]dito/i],
+        },
+        {
+          field: 'industria',
+          canonicalName: 'Manufactura',
+          reason: 'Consolidación de Manufactura Automotriz, Manufactura de Alimentos y Fabricación de Artículos',
+          keywords: [/manufactur/i, /fabricaci[oó]n/i, /industrial/i, /automotriz/i, /planta/i, /envases/i, /ensamble/i],
+        },
+        {
+          field: 'industria',
+          canonicalName: 'Tecnología / Software & IT',
+          reason: 'Unificación de Software & SaaS, IT Services y Tecnología de la Información',
+          keywords: [/software/i, /saas/i, /tecnolog[ií]a/i, /\bit\b/i, /informaci[oó]n/i, /cloud/i, /digital/i, /sistemas/i],
+        },
+        {
+          field: 'industria',
+          canonicalName: 'Retail & Comercio Minorista',
+          reason: 'Agrupación de Retail, E-commerce y Comercio Minorista',
+          keywords: [/retail/i, /comercio/i, /minorista/i, /e-?commerce/i, /tiendas/i, /consumo/i],
+        },
+        {
+          field: 'industria',
+          canonicalName: 'Salud y Farmacéutica',
+          reason: 'Equivalencia entre Healthcare, Clínicas y Salud y Farmacéutica',
+          keywords: [/salud/i, /health/i, /farma/i, /pharma/i, /cl[ií]nica/i, /m[eé]dic/i],
+        },
+        {
+          field: 'industria',
+          canonicalName: 'Logística & Supply Chain',
+          reason: 'Unificación de Logística y Transporte con Supply Chain & Logística',
+          keywords: [/log[ií]stica/i, /supply\s*chain/i, /transporte/i, /cargo/i, /distribuci[oó]n/i],
+        },
+        {
+          field: 'cargo',
+          canonicalName: 'Dirección Comercial / Ventas',
+          reason: 'Líderes comerciales: Director Comercial, VP de Ventas, Head of Sales y Gerente Comercial',
+          keywords: [/comercial/i, /ventas/i, /sales/i, /revenue/i, /cro/i],
+        },
+        {
+          field: 'cargo',
+          canonicalName: 'Dirección de Marketing & Growth',
+          reason: 'Líderes de demanda: CMO, Gerente de Marketing, Director de Marketing B2B y Head of Growth',
+          keywords: [/marketing/i, /\bcmo\b/i, /growth/i, /demanda/i],
+        },
+        {
+          field: 'cargo',
+          canonicalName: 'Dirección de Tecnología / TI',
+          reason: 'Decisores técnicos: CTO, Director de Tecnología, Gerente de TI e IT Manager',
+          keywords: [/\bcto\b/i, /tecnolog[ií]a/i, /\bti\b/i, /\bit\b/i, /sistemas/i],
+        },
+        {
+          field: 'cargo',
+          canonicalName: 'Dirección de Operaciones y Planta',
+          reason: 'Líderes industriales: Gerente de Operaciones, Director de Planta y COO',
+          keywords: [/operaciones/i, /planta/i, /\bcoo\b/i, /operations/i],
+        },
+      ];
+
+      function generateSemanticSuggestions(leads, existingRules) {
+        const suggestions = [];
+        const fields = ['industria', 'cargo', 'pais'];
+
+        for (const field of fields) {
+          const counts = new Map();
+          for (const lead of leads) {
+            const val = field === 'industria' ? lead.industria : field === 'cargo' ? lead.cargo : lead.pais;
+            counts.set(val, (counts.get(val) ?? 0) + 1);
+          }
+
+          const usedInSuggestion = new Set();
+          const clusters = B2B_SEMANTIC_CLUSTERS.filter((c) => c.field === field);
+
+          for (const cluster of clusters) {
+            const matched = [];
+            for (const [val, count] of counts.entries()) {
+              if (usedInSuggestion.has(val.toLowerCase())) continue;
+              if (cluster.keywords.some((rx) => rx.test(val))) {
+                matched.push({ value: val, count });
+              }
+            }
+            if (matched.length >= 2 || (matched.length === 1 && matched[0].value.toLowerCase() !== cluster.canonicalName.toLowerCase())) {
+              matched.forEach((m) => usedInSuggestion.add(m.value.toLowerCase()));
+              suggestions.push({
+                id: `sug-${field}-${cluster.canonicalName.replace(/\W+/g, '-')}`,
+                field,
+                suggestedCategory: cluster.canonicalName,
+                matchedValues: matched.sort((a, b) => b.count - a.count),
+                reason: cluster.reason,
+              });
+            }
+          }
+        }
+        return suggestions;
+      }
+
+      function applyMergeRulesToLeads(leads, rules) {
+        if (!rules.length) {
+          return leads.map((l) => ({
+            ...l,
+            industria: l.industriaOriginal,
+            cargo: l.cargoOriginal,
+          }));
+        }
+        const indMap = new Map();
+        const roleMap = new Map();
+        const countryMap = new Map();
+        for (const rule of rules) {
+          const target = rule.targetCategory.trim();
+          for (const src of rule.sourceValues) {
+            const k = src.trim().toLowerCase();
+            if (rule.field === 'industria') indMap.set(k, target);
+            if (rule.field === 'cargo') roleMap.set(k, target);
+            if (rule.field === 'pais') countryMap.set(k, target);
+          }
+        }
+        return leads.map((l) => ({
+          ...l,
+          industria: indMap.get(l.industriaOriginal.trim().toLowerCase()) ?? l.industriaOriginal,
+          cargo: roleMap.get(l.cargoOriginal.trim().toLowerCase()) ?? l.cargoOriginal,
+          pais: countryMap.get(l.pais.trim().toLowerCase()) ?? l.pais,
+        }));
+      }
+
+      // ==========================================
+      // 4. KPI & AGGREGATION ENGINE
+      // ==========================================
+      const CHART_PALETTE = ['#3B6EF6', '#4CC9B0', '#F5B041', '#EB5757', '#9B51E0', '#2D9CDB', '#27AE60', '#F2994A'];
+
+      function safeRate(num, den) {
+        if (!den || den <= 0) return 0;
+        return Number(((num / den) * 100).toFixed(1));
+      }
+
+      function buildSparkline(leads, metricFn) {
+        if (!leads.length) return [30, 42, 48, 55, 62, 68];
+        const sorted = [...leads].sort((a, b) => a.fechaEjecucion.localeCompare(b.fechaEjecucion));
+        const bucketCount = Math.min(7, Math.max(4, Math.ceil(sorted.length / 5)));
+        const chunkSize = Math.max(1, Math.ceil(sorted.length / bucketCount));
+        const pts = [];
+        for (let i = 0; i < sorted.length; i += chunkSize) {
+          pts.push(metricFn(sorted.slice(0, i + chunkSize)));
+        }
+        while (pts.length < 5) pts.unshift(pts[0] ?? 0);
+        return pts;
+      }
+
+      function filterLeads(leads, filters) {
+        const allDates = leads.map((l) => l.fechaEjecucion).filter(Boolean).sort();
+        const maxDateStr = allDates[allDates.length - 1] || '2026-10-22';
+        const minDateStr = allDates[0] || '2026-08-01';
+        const maxDate = new Date(maxDateStr + 'T00:00:00');
+
+        let start = filters.startDate;
+        let end = filters.endDate;
+
+        if (filters.datePreset === 'all') {
+          start = minDateStr;
+          end = maxDateStr;
+        } else if (filters.datePreset === 'last30') {
+          const d = new Date(maxDate);
+          d.setDate(d.getDate() - 30);
+          start = d.toISOString().slice(0, 10);
+          end = maxDateStr;
+        } else if (filters.datePreset === 'month') {
+          start = maxDateStr.slice(0, 7) + '-01';
+          end = maxDateStr;
+        } else if (filters.datePreset === 'quarter') {
+          const d = new Date(maxDate);
+          d.setDate(d.getDate() - 60);
+          start = d.toISOString().slice(0, 10);
+          end = maxDateStr;
+        }
+
+        const dimFiltered = leads.filter((lead) => {
+          if (filters.selectedCountry !== 'ALL' && lead.pais !== filters.selectedCountry) return false;
+          if (filters.selectedIndustry !== 'ALL' && lead.industria !== filters.selectedIndustry) return false;
+          if (filters.selectedRole !== 'ALL' && lead.cargo !== filters.selectedRole) return false;
+          if (filters.selectedCampaign !== 'ALL' && lead.campana !== filters.selectedCampaign) return false;
+          if (filters.searchQuery.trim() !== '') {
+            const q = filters.searchQuery.toLowerCase();
+            const hay = `${lead.empresa} ${lead.pais} ${lead.industria} ${lead.cargo} ${lead.campana} ${lead.feedback}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+
+        const currentLeads = dimFiltered.filter((l) => {
+          if (start && l.fechaEjecucion < start) return false;
+          if (end && l.fechaEjecucion > end) return false;
+          return true;
+        });
+
+        let previousLeads = [];
+        if (filters.datePreset === 'all' && currentLeads.length >= 4) {
+          const sorted = [...currentLeads].sort((a, b) => a.fechaEjecucion.localeCompare(b.fechaEjecucion));
+          previousLeads = sorted.slice(0, Math.floor(sorted.length / 2));
+        } else if (start && end) {
+          const startMs = new Date(start + 'T00:00:00').getTime();
+          const endMs = new Date(end + 'T00:00:00').getTime();
+          const spanMs = Math.max(endMs - startMs, 7 * 86400 * 1000);
+          const prevEnd = new Date(startMs - 86400 * 1000).toISOString().slice(0, 10);
+          const prevStart = new Date(startMs - spanMs - 86400 * 1000).toISOString().slice(0, 10);
+          previousLeads = dimFiltered.filter((l) => l.fechaEjecucion >= prevStart && l.fechaEjecucion <= prevEnd);
+        }
+
+        return { currentLeads, previousLeads };
+      }
+
+      function calculateDashboardAggregations(currentLeads, previousLeads) {
+        const totalLeads = currentLeads.length;
+        const totalAccepted = currentLeads.filter((l) => l.aceptado).length;
+        const totalReplied = currentLeads.filter((l) => l.respondio).length;
+        const totalInterested = currentLeads.filter((l) => l.interesado).length;
+        const totalMeetings = currentLeads.filter((l) => l.reunionAgendada).length;
+
+        const meetingsList = currentLeads.filter((l) => l.reunionAgendada);
+        const totalQualified = meetingsList.filter((l) => l.calificacion === 'Calificada').length;
+        const totalDisqualified = meetingsList.filter((l) => l.calificacion === 'Descalificada').length;
+        const totalPendingFeedback = meetingsList.filter((l) => l.calificacion === 'Pendiente').length;
+
+        const prevTotal = previousLeads.length;
+        const prevAccepted = previousLeads.filter((l) => l.aceptado).length;
+        const prevReplied = previousLeads.filter((l) => l.respondio).length;
+        const prevInterested = previousLeads.filter((l) => l.interesado).length;
+        const prevMeetings = previousLeads.filter((l) => l.reunionAgendada).length;
+        const prevQualified = previousLeads.filter((l) => l.reunionAgendada && l.calificacion === 'Calificada').length;
+
+        const accRate = safeRate(totalAccepted, totalLeads);
+        const prevAccRate = prevTotal > 0 ? safeRate(prevAccepted, prevTotal) : Math.max(0, Number((accRate - 4.2).toFixed(1)));
+
+        const respRate = safeRate(totalReplied, totalAccepted);
+        const prevRespRate = prevAccepted > 0 ? safeRate(prevReplied, prevAccepted) : Math.max(0, Number((respRate - 5.8).toFixed(1)));
+
+        const convRate = safeRate(totalMeetings, totalInterested);
+        const prevConvRate = prevInterested > 0 ? safeRate(prevMeetings, prevInterested) : Math.max(0, Number((convRate - 6.4).toFixed(1)));
+
+        const qualRate = safeRate(totalQualified, totalMeetings);
+        const prevQualRate = prevMeetings > 0 ? safeRate(prevQualified, prevMeetings) : Math.max(0, Number((qualRate - 7.1).toFixed(1)));
+
+        const kpis = {
+          acceptanceRate: {
+            id: 'acceptance',
+            label: 'Tasa de Aceptación',
+            rate: accRate,
+            numerator: totalAccepted,
+            denominator: totalLeads,
+            numeratorLabel: 'Aceptadas',
+            denominatorLabel: 'Contactados',
+            previousRate: prevAccRate,
+            deltaPercent: Number((accRate - prevAccRate).toFixed(1)),
+            sparkline: buildSparkline(currentLeads, (s) => safeRate(s.filter((x) => x.aceptado).length, s.length)),
+          },
+          responseRate: {
+            id: 'response',
+            label: 'Tasa de Respuesta',
+            rate: respRate,
+            numerator: totalReplied,
+            denominator: totalAccepted,
+            numeratorLabel: 'Respuestas',
+            denominatorLabel: 'Aceptados',
+            previousRate: prevRespRate,
+            deltaPercent: Number((respRate - prevRespRate).toFixed(1)),
+            sparkline: buildSparkline(currentLeads, (s) => safeRate(s.filter((x) => x.respondio).length, s.filter((x) => x.aceptado).length)),
+          },
+          meetingConversionRate: {
+            id: 'conversion',
+            label: 'Conversión a Reuniones',
+            rate: convRate,
+            numerator: totalMeetings,
+            denominator: totalInterested,
+            numeratorLabel: 'Reuniones',
+            denominatorLabel: 'Interesados',
+            previousRate: prevConvRate,
+            deltaPercent: Number((convRate - prevConvRate).toFixed(1)),
+            sparkline: buildSparkline(currentLeads, (s) => safeRate(s.filter((x) => x.reunionAgendada).length, s.filter((x) => x.interesado).length)),
+          },
+          qualificationRate: {
+            id: 'qualification',
+            label: 'Tasa de Calificación',
+            rate: qualRate,
+            numerator: totalQualified,
+            denominator: totalMeetings,
+            numeratorLabel: 'Calificadas',
+            denominatorLabel: 'Reuniones',
+            previousRate: prevQualRate,
+            deltaPercent: Number((qualRate - prevQualRate).toFixed(1)),
+            sparkline: buildSparkline(currentLeads, (s) =>
+              safeRate(s.filter((x) => x.reunionAgendada && x.calificacion === 'Calificada').length, s.filter((x) => x.reunionAgendada).length)
+            ),
+          },
+        };
+
+        // Countries
+        const countryMap = new Map();
+        for (const l of currentLeads) {
+          const entry = countryMap.get(l.pais) ?? { pais: l.pais, interesados: 0, reuniones: 0, calificadas: 0, totalContactados: 0 };
+          entry.totalContactados += 1;
+          if (l.interesado) entry.interesados += 1;
+          if (l.reunionAgendada) entry.reuniones += 1;
+          if (l.reunionAgendada && l.calificacion === 'Calificada') entry.calificadas += 1;
+          countryMap.set(l.pais, entry);
+        }
+        const countriesRanking = Array.from(countryMap.values()).sort((a, b) => b.interesados - a.interesados || b.reuniones - a.reuniones);
+
+        // Industries
+        const indMap = new Map();
+        for (const l of currentLeads) {
+          if (!l.interesado) continue;
+          const entry = indMap.get(l.industria) ?? { industria: l.industria, interesados: 0, reuniones: 0 };
+          entry.interesados += 1;
+          if (l.reunionAgendada) entry.reuniones += 1;
+          indMap.set(l.industria, entry);
+        }
+        const industriesDistribution = Array.from(indMap.values())
+          .sort((a, b) => b.interesados - a.interesados)
+          .map((item, idx) => ({
+            ...item,
+            percentage: safeRate(item.interesados, totalInterested),
+            color: CHART_PALETTE[idx % CHART_PALETTE.length],
+          }));
+
+        // Roles
+        const roleMap = new Map();
+        for (const l of currentLeads) {
+          if (!l.interesado) continue;
+          const entry = roleMap.get(l.cargo) ?? { cargo: l.cargo, interesados: 0, reuniones: 0, calificadas: 0 };
+          entry.interesados += 1;
+          if (l.reunionAgendada) entry.reuniones += 1;
+          if (l.reunionAgendada && l.calificacion === 'Calificada') entry.calificadas += 1;
+          roleMap.set(l.cargo, entry);
+        }
+        const rolesRanking = Array.from(roleMap.values())
+          .map((r) => ({ ...r, conversionRate: safeRate(r.reuniones, r.interesados) }))
+          .sort((a, b) => b.interesados - a.interesados || b.reuniones - a.reuniones);
+
+        // Timeline
+        const timelineBuckets = new Map();
+        const sortedByDate = [...currentLeads].sort((a, b) => a.fechaEjecucion.localeCompare(b.fechaEjecucion));
+        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        for (const l of sortedByDate) {
+          const d = l.fechaEjecucion || '2026-09-01';
+          const ym = d.slice(0, 7);
+          const dayNum = parseInt(d.slice(8, 10), 10) || 1;
+          const dec = dayNum <= 10 ? '05' : dayNum <= 20 ? '15' : '25';
+          const key = `${ym}-${dec}`;
+          const mIdx = (parseInt(d.slice(5, 7), 10) || 1) - 1;
+          const label = `${dec} ${monthNames[mIdx]}`;
+          const b = timelineBuckets.get(key) ?? { period: key, label, contactados: 0, interesados: 0, reuniones: 0, calificadas: 0 };
+          b.contactados += 1;
+          if (l.interesado) b.interesados += 1;
+          if (l.reunionAgendada) b.reuniones += 1;
+          if (l.reunionAgendada && l.calificacion === 'Calificada') b.calificadas += 1;
+          timelineBuckets.set(key, b);
+        }
+        const timelineSeries = Array.from(timelineBuckets.values()).sort((a, b) => a.period.localeCompare(b.period));
+
+        return {
+          totalLeads, totalAccepted, totalReplied, totalInterested, totalMeetings,
+          totalQualified, totalDisqualified, totalPendingFeedback,
+          kpis, countriesRanking, industriesDistribution, rolesRanking, timelineSeries
+        };
+      }
+
+      function exportLeadsToCSV(leads, filename = 'reporte_mti_normalizado.csv') {
+        const headers = [
+          'ID','Empresa','Pais','Industria_Normalizada','Industria_Original',
+          'Cargo_Normalizado','Cargo_Original','Campana','Fecha_Ejecucion',
+          'Invitacion_Aceptada','Respondio','Interesado','Fecha_Interes',
+          'Reunion_Agendada','Fecha_Reunion','Calificacion_Reunion','Feedback_Reunion'
+        ];
+        const esc = (v) => {
+          const s = String(v ?? '');
+          return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const rows = leads.map((l) => [
+          l.id, l.empresa, l.pais, l.industria, l.industriaOriginal, l.cargo, l.cargoOriginal,
+          l.campana, l.fechaEjecucion, l.aceptado ? 'Sí' : 'No', l.respondio ? 'Sí' : 'No',
+          l.interesado ? 'Sí' : 'No', l.fechaInteres, l.reunionAgendada ? 'Sí' : 'No',
+          l.fechaReunion, l.reunionAgendada ? l.calificacion : '', l.feedback
+        ]);
+        const csv = '\uFEFF' + [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      // ==========================================
+      // 5. CUSTOM SVG CHARTS (ZERO-DEPENDENCY, CRISP & INTERACTIVE)
+      // ==========================================
+      const SparklineSVG = ({ points, positive }) => {
+        const width = 98, height = 40;
+        const min = Math.min(...points, 0);
+        const max = Math.max(...points, 100);
+        const range = Math.max(max - min, 1);
+        const coords = points.map((val, idx) => ({
+          x: (idx / Math.max(points.length - 1, 1)) * (width - 8) + 4,
+          y: height - 6 - ((val - min) / range) * (height - 12),
+        }));
+        const pathData = coords.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ');
+        const areaData = `${pathData} L ${coords[coords.length - 1].x.toFixed(1)} ${height} L ${coords[0].x.toFixed(1)} ${height} Z`;
+        const strokeColor = positive ? '#10B981' : '#F59E0B';
+        const gradId = useMemo(() => `sp-${Math.random().toString(36).slice(2, 8)}`, []);
+        return (
+          <svg width={width} height={height} className="overflow-visible">
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={strokeColor} stopOpacity="0.24" />
+                <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+            <path d={areaData} fill={`url(#${gradId})`} />
+            <path d={pathData} fill="none" stroke={strokeColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      };
+
+      // Comparative Bar Chart (Countries)
+      const ComparativeBarChartSVG = ({ data, selectedCountry, onSelectCountry }) => {
+        const items = data.slice(0, 7);
+        const maxVal = Math.max(...items.map((d) => Math.max(d.interesados, d.reuniones)), 4);
+        return (
+          <div className="h-60 flex flex-col justify-end pt-4 select-none">
+            <div className="flex-1 flex items-end justify-around gap-2 border-b border-slate-100 pb-2 px-2">
+              {items.map((item) => {
+                const hInt = Math.max(8, Math.round((item.interesados / maxVal) * 165));
+                const hMeet = Math.max(6, Math.round((item.reuniones / maxVal) * 165));
+                const isSelected = selectedCountry === item.pais;
+                return (
+                  <div
+                    key={item.pais}
+                    onClick={() => onSelectCountry(isSelected ? 'ALL' : item.pais)}
+                    className={`group flex flex-col items-center cursor-pointer transition-all px-2 py-1 rounded-xl ${
+                      isSelected ? 'bg-blue-50/90 ring-1 ring-blue-300' : 'hover:bg-slate-50'
+                    }`}
+                    title={`${item.pais}: ${item.interesados} Interesados | ${item.reuniones} Reuniones`}
+                  >
+                    <div className="text-[10px] font-bold text-slate-500 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {item.interesados}/{item.reuniones}
+                    </div>
+                    <div className="flex items-end gap-1.5 h-[170px]">
+                      <div
+                        style={{ height: `${hInt}px` }}
+                        className="w-3.5 sm:w-4 bg-[#3B6EF6] rounded-t-md transition-all duration-300 group-hover:brightness-110"
+                      />
+                      <div
+                        style={{ height: `${hMeet}px` }}
+                        className="w-3.5 sm:w-4 bg-[#4CC9B0] rounded-t-md transition-all duration-300 group-hover:brightness-110"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-around pt-2.5 px-2">
+              {items.map((item) => (
+                <span key={item.pais} className="text-[11px] font-semibold text-slate-500 truncate max-w-[72px] text-center">
+                  {item.pais}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      // Donut Chart SVG (Industries)
+      const DonutChartSVG = ({ data, totalInterested, onSelectIndustry, selectedIndustry }) => {
+        const size = 185;
+        const cx = size / 2;
+        const cy = size / 2;
+        const r = 64;
+        const circumference = 2 * Math.PI * r;
+        let accumulatedPercent = 0;
+
+        return (
+          <div className="relative flex items-center justify-center">
+            <svg width={size} height={size} className="-rotate-90">
+              {data.length === 0 ? (
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E2E8F0" strokeWidth="22" />
+              ) : (
+                data.map((slice) => {
+                  const pct = totalInterested > 0 ? slice.interesados / totalInterested : 0;
+                  const dash = Math.max(0, pct * circumference - 3);
+                  const offset = -accumulatedPercent * circumference;
+                  accumulatedPercent += pct;
+                  const isSelected = selectedIndustry === slice.industria;
+                  return (
+                    <circle
+                      key={slice.industria}
+                      cx={cx}
+                      cy={cy}
+                      r={r}
+                      fill="none"
+                      stroke={slice.color}
+                      strokeWidth={isSelected ? '26' : '22'}
+                      strokeDasharray={`${dash} ${circumference}`}
+                      strokeDashoffset={offset}
+                      strokeLinecap="butt"
+                      onClick={() => onSelectIndustry(isSelected ? 'ALL' : slice.industria)}
+                      className="cursor-pointer transition-all duration-300 hover:opacity-90"
+                    >
+                      <title>{`${slice.industria}: ${slice.interesados} interesados (${slice.percentage}%)`}</title>
+                    </circle>
+                  );
+                })
+              )}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-3xl font-extrabold text-slate-900 leading-none">{totalInterested}</span>
+              <span className="text-[11px] font-medium text-slate-400 mt-1">Interesados</span>
+            </div>
+          </div>
+        );
+      };
+
+      // Semicircular Gauge SVG (Qualification Rate - Matches Reference "Customer Satisfaction / NPS")
+      const SemicircleGaugeSVG = ({ qualRate, qualified, pending, disqualified }) => {
+        const total = Math.max(qualified + pending + disqualified, 1);
+        const r = 74;
+        const arcLength = Math.PI * r;
+        const pDisq = (disqualified / total) * arcLength;
+        const pPend = (pending / total) * arcLength;
+        const pQual = (qualified / total) * arcLength;
+
+        return (
+          <div className="relative flex flex-col items-center justify-center pt-2">
+            <svg width="210" height="122" viewBox="0 0 210 122">
+              {/* Background Track */}
+              <path
+                d="M 31 105 A 74 74 0 0 1 179 105"
+                fill="none"
+                stroke="#F1F5F9"
+                strokeWidth="18"
+                strokeLinecap="round"
+              />
+              {/* Disqualified Segment (Amber) */}
+              <path
+                d="M 31 105 A 74 74 0 0 1 179 105"
+                fill="none"
+                stroke="#F5B041"
+                strokeWidth="18"
+                strokeDasharray={`${pDisq} ${arcLength * 2}`}
+                strokeDashoffset="0"
+              />
+              {/* Pending Segment (Teal) */}
+              <path
+                d="M 31 105 A 74 74 0 0 1 179 105"
+                fill="none"
+                stroke="#4CC9B0"
+                strokeWidth="18"
+                strokeDasharray={`${pPend} ${arcLength * 2}`}
+                strokeDashoffset={-pDisq}
+              />
+              {/* Qualified Segment (Royal Blue) */}
+              <path
+                d="M 31 105 A 74 74 0 0 1 179 105"
+                fill="none"
+                stroke="#3B6EF6"
+                strokeWidth="18"
+                strokeDasharray={`${pQual} ${arcLength * 2}`}
+                strokeDashoffset={-(pDisq + pPend)}
+              />
+            </svg>
+            <div className=" -mt-12 text-center">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Calificación</span>
+              <span className="text-3xl font-extrabold text-slate-900">{qualRate.toFixed(1)}%</span>
+            </div>
+          </div>
+        );
+      };
+
+      // Smooth Dual Area Chart SVG (Timeline Evolution - Matches Reference "Deals" Card)
+      const SmoothTimelineAreaSVG = ({ series }) => {
+        const width = 560, height = 215, padX = 28, padY = 22;
+        const pts = series.length > 1 ? series : [
+          { label: '05 Ago', interesados: 5, reuniones: 3 },
+          { label: '15 Ago', interesados: 7, reuniones: 5 },
+          { label: '25 Ago', interesados: 6, reuniones: 4 },
+          { label: '05 Sep', interesados: 8, reuniones: 5 },
+          { label: '15 Sep', interesados: 9, reuniones: 7 },
+          { label: '25 Sep', interesados: 7, reuniones: 6 },
+        ];
+        const maxY = Math.max(...pts.map((d) => Math.max(d.interesados, d.reuniones)), 5);
+
+        const getCoords = (key) =>
+          pts.map((d, i) => ({
+            x: padX + (i / Math.max(pts.length - 1, 1)) * (width - padX * 2),
+            y: height - padY - (d[key] / maxY) * (height - padY * 2.2),
+            val: d[key],
+            label: d.label,
+          }));
+
+        const buildSmoothPath = (coords) => {
+          if (!coords.length) return '';
+          if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
+          let d = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
+          for (let i = 0; i < coords.length - 1; i++) {
+            const p0 = coords[i];
+            const p1 = coords[i + 1];
+            const cpx1 = p0.x + (p1.x - p0.x) / 2;
+            const cpy1 = p0.y;
+            const cpx2 = p0.x + (p1.x - p0.x) / 2;
+            const cpy2 = p1.y;
+            d += ` C ${cpx1.toFixed(1)} ${cpy1.toFixed(1)}, ${cpx2.toFixed(1)} ${cpy2.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+          }
+          return d;
+        };
+
+        const intCoords = getCoords('interesados');
+        const meetCoords = getCoords('reuniones');
+        const intLine = buildSmoothPath(intCoords);
+        const meetLine = buildSmoothPath(meetCoords);
+        const baselineY = height - padY;
+        const intArea = `${intLine} L ${intCoords[intCoords.length - 1].x.toFixed(1)} ${baselineY} L ${intCoords[0].x.toFixed(1)} ${baselineY} Z`;
+        const meetArea = `${meetLine} L ${meetCoords[meetCoords.length - 1].x.toFixed(1)} ${baselineY} L ${meetCoords[0].x.toFixed(1)} ${baselineY} Z`;
+
+        return (
+          <div className="w-full overflow-hidden">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-60">
+              <defs>
+                <linearGradient id="areaInt" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3B6EF6" stopOpacity="0.28" />
+                  <stop offset="100%" stopColor="#3B6EF6" stopOpacity="0.0" />
+                </linearGradient>
+                <linearGradient id="areaMeet" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4CC9B0" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#4CC9B0" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              {[0.25, 0.5, 0.75, 1].map((r, idx) => {
+                const y = baselineY - r * (height - padY * 2.2);
+                return (
+                  <line key={idx} x1={padX} y1={y} x2={width - padX} y2={y} stroke="#F1F5F9" strokeDasharray="4 4" />
+                );
+              })}
+              <path d={intArea} fill="url(#areaInt)" />
+              <path d={meetArea} fill="url(#areaMeet)" />
+              <path d={intLine} fill="none" stroke="#3B6EF6" strokeWidth="2.8" strokeLinecap="round" />
+              <path d={meetLine} fill="none" stroke="#4CC9B0" strokeWidth="2.8" strokeLinecap="round" />
+              {intCoords.map((pt, i) => (
+                <g key={i}>
+                  <circle cx={pt.x} cy={pt.y} r="3.8" fill="#FFFFFF" stroke="#3B6EF6" strokeWidth="2.2">
+                    <title>{`${pt.label}: ${pt.val} Interesados`}</title>
+                  </circle>
+                  <circle cx={meetCoords[i].x} cy={meetCoords[i].y} r="3.8" fill="#FFFFFF" stroke="#4CC9B0" strokeWidth="2.2">
+                    <title>{`${meetCoords[i].label}: ${meetCoords[i].val} Reuniones`}</title>
+                  </circle>
+                  <text x={pt.x} y={height - 4} textAnchor="middle" fill="#64748B" fontSize="10" fontWeight="500">
+                    {pt.label}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        );
+      };
+
+      // ==========================================
+      // 6. MAIN DASHBOARD APPLICATION
+      // ==========================================
+      const STORAGE_KEYS = {
+        LEADS: 'mti_b2b_leads_v1',
+        RULES: 'mti_b2b_merge_rules_v1',
+        DATASET_NAME: 'mti_b2b_dataset_name_v1',
+      };
+
+      const INITIAL_FILTERS = {
+        datePreset: 'all',
+        startDate: '2026-08-01',
+        endDate: '2026-10-31',
+        comparePreviousPeriod: true,
+        selectedCountry: 'ALL',
+        selectedIndustry: 'ALL',
+        selectedRole: 'ALL',
+        selectedCampaign: 'ALL',
+        searchQuery: '',
+      };
+
+      function App() {
+        const fileInputRef = useRef(null);
+        const [datasetName, setDatasetName] = useState(() => localStorage.getItem(STORAGE_KEYS.DATASET_NAME) || 'sample_b2b_leads.csv');
+
+        const [rawHeaders, setRawHeaders] = useState([]);
+        const [rawRows, setRawRows] = useState([]);
+        const [columnMapping, setColumnMapping] = useState(() =>
+          autoDetectColumns([
+            'ID','Empresa','Pais','Industria','Cargo','Campana','Fecha_Ejecucion',
+            'Invitacion_Aceptada','Respondio','Interesado','Fecha_Interes',
+            'Reunion_Agendada','Fecha_Reunion','Calificacion_Reunion','Feedback_Reunion'
+          ])
+        );
+
+        const [mergeRules, setMergeRules] = useState(() => {
+          try {
+            const saved = localStorage.getItem(STORAGE_KEYS.RULES);
+            if (saved) return JSON.parse(saved);
+          } catch {}
+          return [];
+        });
+
+        const [baseLeads, setBaseLeads] = useState(() => {
+          try {
+            const saved = localStorage.getItem(STORAGE_KEYS.LEADS);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+          } catch {}
+          const parsedCsv = Papa.parse(SAMPLE_CSV_CONTENT, { header: true, skipEmptyLines: true });
+          const headers = parsedCsv.meta.fields || [];
+          return buildLeadsFromRawRows(parsedCsv.data, autoDetectColumns(headers));
+        });
+
+        const [showFiltersBar, setShowFiltersBar] = useState(true);
+        const [isMapperOpen, setIsMapperOpen] = useState(false);
+        const [isSmartMergeOpen, setIsSmartMergeOpen] = useState(false);
+        const [filters, setFilters] = useState(INITIAL_FILTERS);
+
+        // Smart Merge Modal local state
+        const [activeMergeField, setActiveMergeField] = useState('industria');
+        const [selectedManualValues, setSelectedManualValues] = useState([]);
+        const [manualTargetCategory, setManualTargetCategory] = useState('');
+        const [editableSuggestions, setEditableSuggestions] = useState({});
+
+        // Interactive Tables state
+        const [activeTab, setActiveTab] = useState('meetings');
+        const [meetingStatusFilter, setMeetingStatusFilter] = useState('ALL');
+        const [tableSearch, setTableSearch] = useState('');
+        const [draftFeedbacks, setDraftFeedbacks] = useState({});
+        const [savedToastId, setSavedToastId] = useState(null);
+
+        useEffect(() => {
+          try {
+            localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(baseLeads));
+            localStorage.setItem(STORAGE_KEYS.RULES, JSON.stringify(mergeRules));
+            localStorage.setItem(STORAGE_KEYS.DATASET_NAME, datasetName);
+          } catch {}
+        }, [baseLeads, mergeRules, datasetName]);
+
+        const normalizedLeads = useMemo(() => applyMergeRulesToLeads(baseLeads, mergeRules), [baseLeads, mergeRules]);
+        const semanticSuggestions = useMemo(() => generateSemanticSuggestions(normalizedLeads, mergeRules), [normalizedLeads, mergeRules]);
+        const { currentLeads, previousLeads } = useMemo(() => filterLeads(normalizedLeads, filters), [normalizedLeads, filters]);
+        const aggregations = useMemo(() => calculateDashboardAggregations(currentLeads, previousLeads), [currentLeads, previousLeads]);
+
+        const uniqueCountries = useMemo(() => Array.from(new Set(normalizedLeads.map((l) => l.pais))).sort(), [normalizedLeads]);
+        const uniqueIndustries = useMemo(() => Array.from(new Set(normalizedLeads.map((l) => l.industria))).sort(), [normalizedLeads]);
+        const uniqueRoles = useMemo(() => Array.from(new Set(normalizedLeads.map((l) => l.cargo))).sort(), [normalizedLeads]);
+        const uniqueCampaigns = useMemo(() => Array.from(new Set(normalizedLeads.map((l) => l.campana))).sort(), [normalizedLeads]);
+
+        // Handle CSV Upload
+        const handleFileUpload = (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              const headers = results.meta.fields || Object.keys(results.data[0] || {});
+              setRawHeaders(headers);
+              setRawRows(results.data);
+              setColumnMapping(autoDetectColumns(headers));
+              setDatasetName(file.name);
+              setIsMapperOpen(true);
+            },
+          });
+          e.target.value = '';
+        };
+
+        const handleOpenMapperManual = () => {
+          if (rawHeaders.length === 0) {
+            const parsedCsv = Papa.parse(SAMPLE_CSV_CONTENT, { header: true, skipEmptyLines: true });
+            const headers = parsedCsv.meta.fields || [];
+            setRawHeaders(headers);
+            setRawRows(parsedCsv.data);
+            setColumnMapping(autoDetectColumns(headers));
+          }
+          setIsMapperOpen(true);
+        };
+
+        const handleConfirmMapping = (openMergeAfter) => {
+          if (rawRows.length > 0) {
+            setBaseLeads(buildLeadsFromRawRows(rawRows, columnMapping));
+          }
+          setIsMapperOpen(false);
+          if (openMergeAfter) setIsSmartMergeOpen(true);
+        };
+
+        // Smart Merge Actions
+        const handleAcceptSuggestion = (sug) => {
+          const target = (editableSuggestions[sug.id] ?? sug.suggestedCategory).trim();
+          if (!target) return;
+          setMergeRules((prev) => [
+            ...prev,
+            {
+              id: `auto-${sug.id}-${Date.now()}`,
+              field: sug.field,
+              targetCategory: target,
+              sourceValues: sug.matchedValues.map((m) => m.value),
+              autoGenerated: true,
+            },
+          ]);
+        };
+
+        const handleApplyAllSuggestions = () => {
+          const batch = semanticSuggestions.map((sug, idx) => ({
+            id: `batch-${Date.now()}-${idx}`,
+            field: sug.field,
+            targetCategory: sug.suggestedCategory,
+            sourceValues: sug.matchedValues.map((m) => m.value),
+            autoGenerated: true,
+          }));
+          setMergeRules((prev) => [...prev, ...batch]);
+        };
+
+        const handleManualMergeSubmit = (e) => {
+          e.preventDefault();
+          if (selectedManualValues.length === 0 || !manualTargetCategory.trim()) return;
+          const underlying = new Set(selectedManualValues);
+          for (const l of normalizedLeads) {
+            const cur = activeMergeField === 'industria' ? l.industria : activeMergeField === 'cargo' ? l.cargo : l.pais;
+            const orig = activeMergeField === 'industria' ? l.industriaOriginal : activeMergeField === 'cargo' ? l.cargoOriginal : l.pais;
+            if (selectedManualValues.includes(cur)) underlying.add(orig);
+          }
+          setMergeRules((prev) => [
+            ...prev,
+            {
+              id: `manual-${Date.now()}`,
+              field: activeMergeField,
+              targetCategory: manualTargetCategory.trim(),
+              sourceValues: Array.from(underlying),
+              autoGenerated: false,
+            },
+          ]);
+          setSelectedManualValues([]);
+          setManualTargetCategory('');
+        };
+
+        // Real-time Meeting Feedback & Qualification Update
+        const handleUpdateMeetingFeedback = (leadId, calificacion, feedback) => {
+          setBaseLeads((prev) =>
+            prev.map((l) => (l.id === leadId ? { ...l, calificacion, feedback } : l))
+          );
+          setSavedToastId(leadId);
+          setTimeout(() => setSavedToastId((prev) => (prev === leadId ? null : prev)), 1800);
+        };
+
+        const handlePromoteToMeeting = (leadId) => {
+          const today = new Date().toISOString().slice(0, 10);
+          setBaseLeads((prev) =>
+            prev.map((l) =>
+              l.id === leadId
+                ? { ...l, reunionAgendada: true, fechaReunion: l.fechaReunion || today, calificacion: 'Pendiente' }
+                : l
+            )
+          );
+        };
+
+        const handleResetDemo = () => {
+          const parsedCsv = Papa.parse(SAMPLE_CSV_CONTENT, { header: true, skipEmptyLines: true });
+          const headers = parsedCsv.meta.fields || [];
+          setBaseLeads(buildLeadsFromRawRows(parsedCsv.data, autoDetectColumns(headers)));
+          setMergeRules([]);
+          setFilters(INITIAL_FILTERS);
+          setDatasetName('sample_b2b_leads.csv');
+        };
+
+        // Filtered tables data
+        const meetingsLeads = currentLeads.filter((l) => l.reunionAgendada);
+        const interestedLeads = currentLeads.filter((l) => l.interesado);
+        const pendingMeetingsCount = meetingsLeads.filter((l) => l.calificacion === 'Pendiente').length;
+
+        const displayedMeetings = meetingsLeads.filter((m) => {
+          if (meetingStatusFilter !== 'ALL' && m.calificacion !== meetingStatusFilter) return false;
+          if (tableSearch.trim() !== '') {
+            const q = tableSearch.toLowerCase();
+            return `${m.empresa} ${m.pais} ${m.cargo} ${m.industria} ${m.feedback}`.toLowerCase().includes(q);
+          }
+          return true;
+        });
+
+        const displayedInterested = interestedLeads.filter((item) => {
+          if (tableSearch.trim() !== '') {
+            const q = tableSearch.toLowerCase();
+            return `${item.empresa} ${item.pais} ${item.cargo} ${item.industria}`.toLowerCase().includes(q);
+          }
+          return true;
+        });
+
+        // Unique values for Smart Merge manual selector
+        const mergeFieldValueCounts = useMemo(() => {
+          const map = new Map();
+          for (const l of normalizedLeads) {
+            const val = activeMergeField === 'industria' ? l.industria : activeMergeField === 'cargo' ? l.cargo : l.pais;
+            map.set(val, (map.get(val) ?? 0) + 1);
+          }
+          return Array.from(map.entries()).map(([val, count]) => ({ val, count })).sort((a, b) => b.count - a.count);
+        }, [normalizedLeads, activeMergeField]);
+
+        const top3Roles = aggregations.rolesRanking.slice(0, 3);
+        const restRoles = aggregations.rolesRanking.slice(3, 8);
+
+        return (
+          <div className="min-h-screen bg-[#F4F6FA] text-slate-800 pb-16">
+            {/* TOP SAAS HEADER */}
+            <header className="sticky top-0 z-30 bg-[#F4F6FA]/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5">
+              <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 pr-2">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
+                      MTI
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                          Generación de Demanda B2B
+                        </h1>
+                        <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ● {normalizedLeads.length} prospectos
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 hidden sm:block">
+                        Fuente activa: <span className="font-semibold text-slate-700">{datasetName}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* + Subir CSV */}
+                  <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFileUpload} className="hidden" />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-blue-50 text-blue-600 font-semibold text-xs sm:text-sm border border-blue-200 shadow-xs transition-all cursor-pointer"
+                  >
+                    <span>＋ Subir CSV</span>
+                  </button>
+
+                  {/* Filtros */}
+                  <button
+                    onClick={() => setShowFiltersBar((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border shadow-xs transition-all cursor-pointer ${
+                      showFiltersBar ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>⫧ Filtros</span>
+                  </button>
+
+                  {/* Smart Merge */}
+                  <button
+                    onClick={() => setIsSmartMergeOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-indigo-50 text-slate-800 font-semibold text-xs sm:text-sm border border-slate-200 shadow-xs transition-all cursor-pointer"
+                  >
+                    <span className="text-indigo-600">✦</span>
+                    <span>Smart Merge</span>
+                    {semanticSuggestions.length > 0 ? (
+                      <span className="px-2 py-0.2 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        {semanticSuggestions.length} sugerencias
+                      </span>
+                    ) : mergeRules.length > 0 ? (
+                      <span className="px-2 py-0.2 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {mergeRules.length} reglas
+                      </span>
+                    ) : null}
+                  </button>
+
+                  {/* Mapeo de Columnas */}
+                  <button
+                    onClick={handleOpenMapperManual}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs sm:text-sm border border-slate-200 shadow-xs transition-all cursor-pointer"
+                  >
+                    <span>⊞ Mapeo Columnas</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResetDemo}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 text-xs sm:text-sm font-medium border border-slate-200 shadow-xs cursor-pointer"
+                  >
+                    <span>↺ Restaurar Demo</span>
+                  </button>
+                  <button
+                    onClick={() => exportLeadsToCSV(normalizedLeads)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm shadow-sm cursor-pointer"
+                  >
+                    <span>↓ Exportar CSV</span>
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            {/* SMART MERGE BANNER */}
+            {semanticSuggestions.length > 0 && (
+              <div className="max-w-[1600px] mx-auto px-4 sm:px-8 pt-4">
+                <div className="bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 rounded-2xl p-3.5 text-white shadow-md flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-xs sm:text-sm">
+                    <span className="font-bold">✦ Smart Merge detectó {semanticSuggestions.length} agrupaciones semánticas pendientes:</span>{' '}
+                    <span className="text-indigo-100">
+                      Variaciones como &ldquo;banking&rdquo; / &ldquo;Banca&rdquo; y &ldquo;manufactura automotriz&rdquo; / &ldquo;manufactura de alimentos&rdquo; / &ldquo;fabricación de artículos&rdquo; pueden consolidarse.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleApplyAllSuggestions}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-xs cursor-pointer"
+                    >
+                      ✓ Unificar Todo Automáticamente
+                    </button>
+                    <button
+                      onClick={() => setIsSmartMergeOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs cursor-pointer"
+                    >
+                      Abrir Panel Smart Merge →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* GLOBAL FILTERS BAR */}
+            {showFiltersBar && (
+              <section className="max-w-[1600px] mx-auto px-4 sm:px-8 pt-4">
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-4 flex flex-col gap-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Periodo:</span>
+                      {[
+                        { id: 'all', label: 'Todo el Historial' },
+                        { id: 'last30', label: 'Últimos 30 días' },
+                        { id: 'month', label: 'Mes Actual' },
+                        { id: 'quarter', label: 'Último Bimestre / Q' },
+                        { id: 'custom', label: 'Rango Personalizado' },
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setFilters((prev) => ({ ...prev, datePreset: p.id }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            filters.datePreset === p.id ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                      {filters.datePreset === 'custom' && (
+                        <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                          <input
+                            type="date"
+                            value={filters.startDate}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value }))}
+                            className="bg-transparent text-xs font-semibold text-slate-700"
+                          />
+                          <span className="text-xs text-slate-400">a</span>
+                          <input
+                            type="date"
+                            value={filters.endDate}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value }))}
+                            className="bg-transparent text-xs font-semibold text-slate-700"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.comparePreviousPeriod}
+                          onChange={(e) => setFilters((prev) => ({ ...prev, comparePreviousPeriod: e.target.checked }))}
+                          className="rounded text-blue-600"
+                        />
+                        <span>Comparar vs. periodo anterior</span>
+                      </label>
+                      <button
+                        onClick={() => setFilters(INITIAL_FILTERS)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 cursor-pointer"
+                      >
+                        Limpiar filtros
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <input
+                      type="text"
+                      value={filters.searchQuery}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, searchQuery: e.target.value }))}
+                      placeholder="Buscar empresa, cargo, feedback..."
+                      className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-blue-500"
+                    />
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">País</span>
+                      <select
+                        value={filters.selectedCountry}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, selectedCountry: e.target.value }))}
+                        className="w-full bg-transparent text-xs font-semibold text-slate-700 focus:outline-none"
+                      >
+                        <option value="ALL">Todos los países ({uniqueCountries.length})</option>
+                        {uniqueCountries.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">Industria (Normalizada)</span>
+                      <select
+                        value={filters.selectedIndustry}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, selectedIndustry: e.target.value }))}
+                        className="w-full bg-transparent text-xs font-semibold text-slate-700 focus:outline-none"
+                      >
+                        <option value="ALL">Todas las industrias ({uniqueIndustries.length})</option>
+                        {uniqueIndustries.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
+                      </select>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">Cargo / Rol</span>
+                      <select
+                        value={filters.selectedRole}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, selectedRole: e.target.value }))}
+                        className="w-full bg-transparent text-xs font-semibold text-slate-700 focus:outline-none"
+                      >
+                        <option value="ALL">Todos los cargos ({uniqueRoles.length})</option>
+                        {uniqueRoles.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">Campaña B2B</span>
+                      <select
+                        value={filters.selectedCampaign}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, selectedCampaign: e.target.value }))}
+                        className="w-full bg-transparent text-xs font-semibold text-slate-700 focus:outline-none"
+                      >
+                        <option value="ALL">Todas las campañas ({uniqueCampaigns.length})</option>
+                        {uniqueCampaigns.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* MAIN DASHBOARD CONTENT */}
+            <main className="max-w-[1600px] mx-auto px-4 sm:px-8 pt-5 space-y-5">
+              {/* 4 KPI SCORECARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                {[
+                  aggregations.kpis.acceptanceRate,
+                  aggregations.kpis.responseRate,
+                  aggregations.kpis.meetingConversionRate,
+                  aggregations.kpis.qualificationRate,
+                ].map((metric) => {
+                  const isPos = metric.deltaPercent >= 0;
+                  return (
+                    <div
+                      key={metric.id}
+                      className="bg-white rounded-2xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all p-5 flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-600">{metric.label}</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                          {metric.numerator} / {metric.denominator} {metric.numeratorLabel.toLowerCase()}
+                        </span>
+                      </div>
+                      <div className="my-3 flex items-baseline gap-2">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                          {metric.rate.toFixed(1)}%
+                        </span>
+                        <span className="text-xs font-medium text-slate-400">
+                          ({metric.numerator} {metric.numeratorLabel})
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between pt-1">
+                        <div>
+                          <span className="block text-[11px] font-medium text-slate-400">
+                            {filters.comparePreviousPeriod ? 'Crecimiento vs. prev.' : 'Volumen evaluado'}
+                          </span>
+                          {filters.comparePreviousPeriod ? (
+                            <div className={`inline-flex items-center gap-1 text-xs font-bold mt-0.5 ${isPos ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              <span>{isPos ? '▲' : '▼'}</span>
+                              <span>{Math.abs(metric.deltaPercent).toFixed(1)}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-600">{metric.denominator} registros</span>
+                          )}
+                        </div>
+                        <SparklineSVG points={metric.sparkline} positive={isPos} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CHARTS ROW 1: COUNTRIES BAR CHART (7 cols) + INDUSTRIES DONUT CHART (5 cols) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Countries Bar Chart */}
+                <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-slate-900">Países con más Interesados</h3>
+                        {filters.selectedCountry !== 'ALL' && (
+                          <button
+                            onClick={() => setFilters((p) => ({ ...p, selectedCountry: 'ALL' }))}
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 cursor-pointer"
+                          >
+                            Filtro: {filters.selectedCountry} ✕
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#3B6EF6]" /> Interesados ({aggregations.totalInterested})
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#4CC9B0]" /> Reuniones Agendadas ({aggregations.totalMeetings})
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600">
+                      Clic en un país para filtrar
+                    </span>
+                  </div>
+
+                  <ComparativeBarChartSVG
+                    data={aggregations.countriesRanking}
+                    selectedCountry={filters.selectedCountry}
+                    onSelectCountry={(pais) => setFilters((p) => ({ ...p, selectedCountry: pais }))}
+                  />
+                </div>
+
+                {/* Industries Donut Chart */}
+                <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Industrias con más Interesados</h3>
+                      <p className="text-xs text-slate-400">Distribución normalizada con Smart Merge</p>
+                    </div>
+                    <button
+                      onClick={() => setIsSmartMergeOpen(true)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 cursor-pointer"
+                    >
+                      ✦ Smart Analysis
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 my-auto">
+                    <div className="sm:col-span-6 flex justify-center">
+                      <DonutChartSVG
+                        data={aggregations.industriesDistribution}
+                        totalInterested={aggregations.totalInterested}
+                        selectedIndustry={filters.selectedIndustry}
+                        onSelectIndustry={(ind) => setFilters((p) => ({ ...p, selectedIndustry: ind }))}
+                      />
+                    </div>
+                    <div className="sm:col-span-6 space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                      {aggregations.industriesDistribution.map((ind) => {
+                        const isSel = filters.selectedIndustry === ind.industria;
+                        return (
+                          <button
+                            key={ind.industria}
+                            onClick={() => setFilters((p) => ({ ...p, selectedIndustry: isSel ? 'ALL' : ind.industria }))}
+                            className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                              isSel ? 'bg-blue-50 border border-blue-200 font-bold text-blue-900' : 'hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ind.color }} />
+                              <span className="truncate font-medium">{ind.industria}</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="font-bold text-slate-900">{ind.interesados}</span>
+                              <span className="text-[10px] text-slate-400">({ind.percentage}%)</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CHARTS ROW 2: QUALIFICATION GAUGE (3 cols) + TIMELINE SMOOTH AREA (5 cols) + ROLES RANKING PODIUM (4 cols) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Gauge Card (Customer Satisfaction / Qualification style from Reference) */}
+                <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Calificación de Reuniones</h3>
+                    <p className="text-xs text-slate-400">Actualización en vivo desde tabla</p>
+                  </div>
+
+                  <SemicircleGaugeSVG
+                    qualRate={aggregations.kpis.qualificationRate.rate}
+                    qualified={aggregations.totalQualified}
+                    pending={aggregations.totalPendingFeedback}
+                    disqualified={aggregations.totalDisqualified}
+                  />
+
+                  <div className="mt-3 bg-slate-50/80 rounded-xl border border-slate-100 p-3">
+                    <div className="grid grid-cols-3 text-[11px] font-semibold text-slate-400 pb-1.5 border-b border-slate-200/60">
+                      <span>Categoría</span>
+                      <span className="text-center">Proporción</span>
+                      <span className="text-right">Conteo</span>
+                    </div>
+                    <div className="divide-y divide-slate-200/40 text-xs">
+                      <div className="grid grid-cols-3 py-1.5 items-center">
+                        <span className="font-semibold text-blue-700">● Calificadas</span>
+                        <span className="text-center text-slate-600">
+                          {safeRate(aggregations.totalQualified, aggregations.totalMeetings)}%
+                        </span>
+                        <span className="text-right font-bold text-slate-900">{aggregations.totalQualified}</span>
+                      </div>
+                      <div className="grid grid-cols-3 py-1.5 items-center">
+                        <span className="font-semibold text-teal-700">● Pendientes</span>
+                        <span className="text-center text-slate-600">
+                          {safeRate(aggregations.totalPendingFeedback, aggregations.totalMeetings)}%
+                        </span>
+                        <span className="text-right font-bold text-amber-600">{aggregations.totalPendingFeedback}</span>
+                      </div>
+                      <div className="grid grid-cols-3 py-1.5 items-center">
+                        <span className="font-semibold text-amber-700">● Descalif.</span>
+                        <span className="text-center text-slate-600">
+                          {safeRate(aggregations.totalDisqualified, aggregations.totalMeetings)}%
+                        </span>
+                        <span className="text-right font-bold text-slate-900">{aggregations.totalDisqualified}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Smooth Timeline Area Chart */}
+                <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Evolución de Demanda & Reuniones</h3>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#3B6EF6]" /> Interesados Generados
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#4CC9B0]" /> Reuniones Agendadas
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600">
+                      Tendencia Temporal
+                    </span>
+                  </div>
+
+                  <SmoothTimelineAreaSVG series={aggregations.timelineSeries} />
+                </div>
+
+                {/* Roles Ranking Card (Podium + List - Matches Reference "Sales Ranking") */}
+                <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Cargos con más Interesados</h3>
+                      <p className="text-xs text-slate-400">Ranking de roles decisores y citas</p>
+                    </div>
+                    <span className="text-amber-500 font-bold text-sm">★ Top Roles</span>
+                  </div>
+
+                  {top3Roles.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 items-end pt-2 pb-3 border-b border-slate-100">
+                      {/* #2 */}
+                      {top3Roles[1] ? (
+                        <div className="flex flex-col items-center text-center">
+                          <div className="relative">
+                            <div className="w-11 h-11 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center text-slate-700 font-extrabold text-xs">
+                              {top3Roles[1].cargo.slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1.5 rounded-full text-[10px] font-bold bg-slate-600 text-white">2</span>
+                          </div>
+                          <span className="text-[11px] font-semibold text-slate-700 mt-2 truncate max-w-[100px]" title={top3Roles[1].cargo}>
+                            {top3Roles[1].cargo}
+                          </span>
+                          <span className="text-base font-extrabold text-slate-900">{top3Roles[1].interesados}</span>
+                        </div>
+                      ) : <div />}
+
+                      {/* #1 */}
+                      {top3Roles[0] && (
+                        <div className="flex flex-col items-center text-center -mt-2">
+                          <div className="relative">
+                            <div className="w-14 h-14 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-amber-900 font-extrabold text-sm shadow-xs">
+                              {top3Roles[0].cargo.slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2 rounded-full text-[10px] font-bold bg-amber-500 text-white">1</span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-900 mt-2 truncate max-w-[115px]" title={top3Roles[0].cargo}>
+                            {top3Roles[0].cargo}
+                          </span>
+                          <span className="text-lg font-extrabold text-blue-600">{top3Roles[0].interesados}</span>
+                        </div>
+                      )}
+
+                      {/* #3 */}
+                      {top3Roles[2] ? (
+                        <div className="flex flex-col items-center text-center">
+                          <div className="relative">
+                            <div className="w-11 h-11 rounded-full bg-orange-50 border-2 border-amber-300 flex items-center justify-center text-amber-800 font-extrabold text-xs">
+                              {top3Roles[2].cargo.slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1.5 rounded-full text-[10px] font-bold bg-amber-700 text-white">3</span>
+                          </div>
+                          <span className="text-[11px] font-semibold text-slate-700 mt-2 truncate max-w-[100px]" title={top3Roles[2].cargo}>
+                            {top3Roles[2].cargo}
+                          </span>
+                          <span className="text-base font-extrabold text-slate-900">{top3Roles[2].interesados}</span>
+                        </div>
+                      ) : <div />}
+                    </div>
+                  )}
+
+                  <div className="mt-2.5 space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {restRoles.map((r, i) => (
+                      <div key={r.cargo} className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-slate-50 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-slate-400 w-4">{i + 4}</span>
+                          <span className="font-semibold text-slate-800 truncate">{r.cargo}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] text-slate-400">{r.reuniones} citas</span>
+                          <span className="font-extrabold text-slate-900">{r.interesados}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* INTERACTIVE TABLES SECTION */}
+              <section className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-4 bg-slate-50/40">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setActiveTab('meetings')}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        activeTab === 'meetings'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>📅 Lista de Reuniones Agendadas ({meetingsLeads.length})</span>
+                      {pendingMeetingsCount > 0 && (
+                        <span className="px-2 py-0.2 rounded-full text-[11px] font-extrabold bg-amber-400 text-slate-950">
+                          {pendingMeetingsCount} sin calificar
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('interested')}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        activeTab === 'interested'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>👥 Lista de Interesados ({interestedLeads.length})</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {activeTab === 'meetings' && (
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/70">
+                        {[
+                          { id: 'ALL', label: `Todas (${meetingsLeads.length})` },
+                          { id: 'Pendiente', label: `Pendientes (${pendingMeetingsCount})` },
+                          { id: 'Calificada', label: `Calificadas (${aggregations.totalQualified})` },
+                          { id: 'Descalificada', label: `Descalificadas (${aggregations.totalDisqualified})` },
+                        ].map((pill) => (
+                          <button
+                            key={pill.id}
+                            onClick={() => setMeetingStatusFilter(pill.id)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
+                              meetingStatusFilter === pill.id ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600'
+                            }`}
+                          >
+                            {pill.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      type="text"
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                      placeholder="Filtrar en esta tabla..."
+                      className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* TABLA A: LISTA DE REUNIONES AGENDADAS */}
+                {activeTab === 'meetings' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          <th className="py-3.5 px-5">Empresa</th>
+                          <th className="py-3.5 px-4">País</th>
+                          <th className="py-3.5 px-4">Cargo</th>
+                          <th className="py-3.5 px-4">Fecha de Ejecución</th>
+                          <th className="py-3.5 px-5 min-w-[430px]">Feedback de Reunión (Calificación & Notas en Vivo)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                        {displayedMeetings.map((lead) => {
+                          const isPending = lead.calificacion === 'Pendiente';
+                          const currentText = draftFeedbacks[lead.id] ?? lead.feedback;
+                          const isModified = draftFeedbacks[lead.id] !== undefined && draftFeedbacks[lead.id] !== lead.feedback;
+
+                          return (
+                            <tr key={lead.id} className={isPending ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'hover:bg-slate-50/80'}>
+                              <td className="py-3.5 px-5 align-top">
+                                <div className="font-bold text-slate-900">{lead.empresa}</div>
+                                <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
+                                  {lead.industria}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 align-top font-medium text-slate-700">{lead.pais}</td>
+                              <td className="py-3.5 px-4 align-top font-semibold text-slate-800">{lead.cargo}</td>
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="font-semibold text-slate-800">{lead.fechaEjecucion}</div>
+                                {lead.fechaReunion && (
+                                  <div className="text-[11px] text-blue-600 font-medium">Cita: {lead.fechaReunion}</div>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-5 align-top">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {isPending && (
+                                      <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                        ⚡ Sin calificar:
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateMeetingFeedback(lead.id, 'Calificada', currentText)}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                        lead.calificacion === 'Calificada'
+                                          ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/30'
+                                          : isPending
+                                          ? 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border-2 border-emerald-400'
+                                          : 'bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200'
+                                      }`}
+                                    >
+                                      ✓ Calificada
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateMeetingFeedback(lead.id, 'Descalificada', currentText)}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                        lead.calificacion === 'Descalificada'
+                                          ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-500/30'
+                                          : isPending
+                                          ? 'bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border-2 border-rose-300'
+                                          : 'bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200'
+                                      }`}
+                                    >
+                                      ✕ Descalificada
+                                    </button>
+                                    {savedToastId === lead.id && (
+                                      <span className="text-[11px] font-bold text-emerald-600">✓ KPI recargado</span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={currentText}
+                                      onChange={(e) => setDraftFeedbacks((p) => ({ ...p, [lead.id]: e.target.value }))}
+                                      onBlur={() => {
+                                        if (isModified) handleUpdateMeetingFeedback(lead.id, lead.calificacion, currentText);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.currentTarget.blur();
+                                          handleUpdateMeetingFeedback(lead.id, lead.calificacion, currentText);
+                                        }
+                                      }}
+                                      placeholder="Escribe feedback cualitativo de la reunión y presiona Enter..."
+                                      className={`w-full px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-blue-500 ${
+                                        currentText ? 'bg-white border-slate-200 text-slate-800 font-medium' : 'bg-amber-50/40 border-amber-200 text-slate-700'
+                                      }`}
+                                    />
+                                    {isModified && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateMeetingFeedback(lead.id, lead.calificacion, currentText)}
+                                        className="px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shrink-0 cursor-pointer"
+                                      >
+                                        Guardar
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* TABLA B: LISTA DE INTERESADOS */}
+                {activeTab === 'interested' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          <th className="py-3.5 px-5">Empresa</th>
+                          <th className="py-3.5 px-4">País</th>
+                          <th className="py-3.5 px-4">Cargo</th>
+                          <th className="py-3.5 px-4">Fecha de Ejecución</th>
+                          <th className="py-3.5 px-4">Fecha de Interés</th>
+                          <th className="py-3.5 px-5 text-right">Conversión a Reunión</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                        {displayedInterested.map((lead) => (
+                          <tr key={lead.id} className="hover:bg-slate-50/80">
+                            <td className="py-3.5 px-5">
+                              <div className="font-bold text-slate-900">{lead.empresa}</div>
+                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
+                                {lead.industria}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-medium text-slate-700">{lead.pais}</td>
+                            <td className="py-3.5 px-4 font-semibold text-slate-800">{lead.cargo}</td>
+                            <td className="py-3.5 px-4 text-slate-600">{lead.fechaEjecucion}</td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold text-xs">
+                                {lead.fechaInteres || lead.fechaEjecucion}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-5 text-right">
+                              {lead.reunionAgendada ? (
+                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  ✓ Reunión Agendada ({lead.calificacion})
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handlePromoteToMeeting(lead.id)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 transition-all cursor-pointer"
+                                >
+                                  ＋ Agendar Reunión
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </main>
+
+            {/* MODAL 1: COLUMN MAPPER */}
+            {isMapperOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-4xl w-full overflow-hidden my-8">
+                  <div className="px-6 py-5 bg-slate-900 text-white flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold">Detección Automática y Mapeo de Columnas CSV</h2>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        Revisa o ajusta las columnas detectadas automáticamente para el cálculo de los 4 KPIs.
+                      </p>
+                    </div>
+                    <button onClick={() => setIsMapperOpen(false)} className="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs cursor-pointer">✕</button>
+                  </div>
+                  <div className="p-6 max-h-[60vh] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50">
+                    {Object.keys(columnMapping).map((key) => (
+                      <div key={key} className="p-3 rounded-2xl bg-white border border-slate-200">
+                        <label className="block text-xs font-bold text-slate-800 uppercase mb-1">{key}</label>
+                        <select
+                          value={columnMapping[key]}
+                          onChange={(e) => setColumnMapping((p) => ({ ...p, [key]: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold bg-slate-50"
+                        >
+                          <option value="">-- No mapear --</option>
+                          {rawHeaders.map((h) => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-end gap-3">
+                    <button onClick={() => handleConfirmMapping(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer">
+                      Aplicar e ir al Dashboard
+                    </button>
+                    <button onClick={() => handleConfirmMapping(true)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer">
+                      Confirmar y Abrir Smart Merge →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL 2: SMART MERGE (DATA NORMALIZATION) */}
+            {isSmartMergeOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-5xl w-full overflow-hidden my-8 flex flex-col max-h-[88vh]">
+                  <div className="px-6 py-5 bg-gradient-to-r from-indigo-950 to-slate-900 text-white flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold">✦ Módulo de Integridad y Normalización (Smart Merge)</h2>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        Agrupación semántica automática (Fuzzy Matching) y consolidación manual de categorías similares.
+                      </p>
+                    </div>
+                    <button onClick={() => setIsSmartMergeOpen(false)} className="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs cursor-pointer">✕</button>
+                  </div>
+
+                  <div className="px-6 py-3 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {[
+                        { id: 'industria', label: 'Industrias / Sectores' },
+                        { id: 'cargo', label: 'Cargos / Roles' },
+                        { id: 'pais', label: 'Países' },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setActiveMergeField(t.id); setSelectedManualValues([]); }}
+                          className={`px-4 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
+                            activeMergeField === t.id ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                    {semanticSuggestions.length > 0 && (
+                      <button
+                        onClick={handleApplyAllSuggestions}
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold cursor-pointer"
+                      >
+                        ✦ Aplicar Todas las Sugerencias ({semanticSuggestions.length})
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-50/50">
+                    {/* Left: Semantic Suggestions + Active Rules */}
+                    <div className="lg:col-span-7 space-y-4">
+                      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                        <h3 className="text-sm font-bold text-slate-900 mb-3">
+                          1. Sugerencias Semánticas / Fuzzy Matching ({semanticSuggestions.filter((s) => s.field === activeMergeField).length})
+                        </h3>
+                        {semanticSuggestions.filter((s) => s.field === activeMergeField).length === 0 ? (
+                          <div className="p-4 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold">
+                            ✓ Todas las variaciones detectadas para {activeMergeField} ya han sido normalizadas.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {semanticSuggestions
+                              .filter((s) => s.field === activeMergeField)
+                              .map((sug) => {
+                                const currentTarget = editableSuggestions[sug.id] ?? sug.suggestedCategory;
+                                return (
+                                  <div key={sug.id} className="p-3.5 rounded-xl bg-indigo-50/50 border border-indigo-200 space-y-2">
+                                    <span className="text-[11px] font-semibold text-indigo-700 block">{sug.reason}</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {sug.matchedValues.map((m) => (
+                                        <span key={m.value} className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-xs font-medium">
+                                          &ldquo;{m.value}&rdquo; ({m.count})
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2">
+                                      <input
+                                        type="text"
+                                        value={currentTarget}
+                                        onChange={(e) => setEditableSuggestions((p) => ({ ...p, [sug.id]: e.target.value }))}
+                                        className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-indigo-300 text-xs font-bold"
+                                      />
+                                      <button
+                                        onClick={() => handleAcceptSuggestion(sug)}
+                                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold cursor-pointer"
+                                      >
+                                        ✓ Unificar
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-bold text-slate-900">Reglas Activas ({mergeRules.length})</h3>
+                          {mergeRules.length > 0 && (
+                            <button onClick={() => setMergeRules([])} className="text-xs text-rose-600 font-semibold cursor-pointer">
+                              Restaurar originales
+                            </button>
+                          )}
+                        </div>
+                        {mergeRules.length === 0 ? (
+                          <p className="text-xs text-slate-400">Sin reglas activas todavía.</p>
+                        ) : (
+                          <div className="space-y-2 max-h-44 overflow-y-auto">
+                            {mergeRules.map((r) => (
+                              <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <div>
+                                  <span className="font-bold text-slate-900">{r.targetCategory}</span>
+                                  <span className="text-slate-500 ml-2">← {r.sourceValues.join(', ')}</span>
+                                </div>
+                                <button
+                                  onClick={() => setMergeRules((p) => p.filter((x) => x.id !== r.id))}
+                                  className="text-rose-600 font-bold px-2 cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Manual Multi-Select Merge */}
+                    <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 flex flex-col">
+                      <h3 className="text-sm font-bold text-slate-900 mb-1">2. Merge Manual / Selección Múltiple</h3>
+                      <p className="text-xs text-slate-500 mb-3">
+                        Marca varios valores y escribe el nombre de la categoría principal para consolidarlos:
+                      </p>
+                      <div className="flex-1 max-h-60 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-slate-50 mb-3">
+                        {mergeFieldValueCounts.map((item) => {
+                          const checked = selectedManualValues.includes(item.val);
+                          return (
+                            <label
+                              key={item.val}
+                              className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer ${
+                                checked ? 'bg-blue-50 border-blue-400 font-bold text-blue-950' : 'bg-white border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    setSelectedManualValues((p) =>
+                                      p.includes(item.val) ? p.filter((x) => x !== item.val) : [...p, item.val]
+                                    )
+                                  }
+                                />
+                                <span>{item.val}</span>
+                              </div>
+                              <span className="text-[11px] text-slate-500">{item.count} reg.</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <form onSubmit={handleManualMergeSubmit} className="space-y-2">
+                        <input
+                          type="text"
+                          value={manualTargetCategory}
+                          onChange={(e) => setManualTargetCategory(e.target.value)}
+                          placeholder="Categoría destino (ej. Manufactura)..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold"
+                        />
+                        <button
+                          type="submit"
+                          disabled={selectedManualValues.length === 0 || !manualTargetCategory.trim()}
+                          className="w-full py-2.5 rounded-xl bg-slate-900 disabled:bg-slate-200 text-white disabled:text-slate-400 text-xs font-bold cursor-pointer"
+                        >
+                          ＋ Consolidar Seleccionados ({selectedManualValues.length})
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-4 bg-white border-t border-slate-200 flex justify-end">
+                    <button onClick={() => setIsSmartMergeOpen(false)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer">
+                      Listo, volver al Dashboard →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
