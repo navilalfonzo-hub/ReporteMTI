@@ -398,6 +398,25 @@
         const [tableSearch, setTableSearch] = useState('');
         const [draftFeedbacks, setDraftFeedbacks] = useState({});
         const [savedToastId, setSavedToastId] = useState(null);
+        const [openLinkedinRowId, setOpenLinkedinRowId] = useState(null);
+        const [showAllLinkedinUrls, setShowAllLinkedinUrls] = useState(false);
+        const [copiedLinkedinId, setCopiedLinkedinId] = useState(null);
+
+        const handleCopyLinkedin = (id, rawUrl) => {
+          if (!rawUrl) return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(rawUrl).catch(() => {});
+          } else {
+            const temp = document.createElement('textarea');
+            temp.value = rawUrl;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+          }
+          setCopiedLinkedinId(id);
+          setTimeout(() => setCopiedLinkedinId((prev) => (prev === id ? null : prev)), 2000);
+        };
 
         useEffect(() => {
           try {
@@ -1324,6 +1343,17 @@
                           className={`px-3 py-1.5 rounded-xl border text-xs ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
                         />
                         <button
+                          onClick={() => setShowAllLinkedinUrls((v) => !v)}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer ${
+                            showAllLinkedinUrls
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-slate-500/10 hover:bg-slate-500/20 border-transparent'
+                          }`}
+                          title="Mostrar u ocultar todas las URLs de LinkedIn para copiar y pegar"
+                        >
+                          🔗 {showAllLinkedinUrls ? 'Ocultar URLs LinkedIn' : 'Ver URLs LinkedIn'}
+                        </button>
+                        <button
                           onClick={() => exportElementAsHDImage('card-meetings-table', 'tabla_reuniones_agendadas_HD', 'png', darkMode)}
                           className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-500/10 hover:bg-slate-500/20 cursor-pointer"
                         >
@@ -1348,6 +1378,7 @@
                             const isPending = lead.etapaMTI === 'Pendiente';
                             const currentText = draftFeedbacks[lead.id] ?? lead.feedbackReunion;
                             const isModified = draftFeedbacks[lead.id] !== undefined && draftFeedbacks[lead.id] !== lead.feedbackReunion;
+                            const isLinkedinExpanded = showAllLinkedinUrls || openLinkedinRowId === `meet-${lead.id}`;
 
                             return (
                               <tr key={lead.id} className={isPending ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-slate-500/5'}>
@@ -1363,14 +1394,42 @@
                                 <td className="py-3.5 px-4 align-top font-medium">{lead.pais}</td>
                                 <td className="py-3.5 px-4 align-top">
                                   <div className="font-bold">{lead.cargo}</div>
-                                  <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                  <div className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5 mt-0.5">
                                     <span>{lead.nombre}</span>
                                     {lead.linkedin && (
-                                      <a href={lead.linkedin} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-semibold">
-                                        [LinkedIn ↗]
-                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setOpenLinkedinRowId((prev) =>
+                                            prev === `meet-${lead.id}` ? null : `meet-${lead.id}`
+                                          )
+                                        }
+                                        className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 cursor-pointer"
+                                        title="Mostrar vista auxiliar con la URL tal cual aparece en el CSV para copiar y pegar"
+                                      >
+                                        {isLinkedinExpanded ? '▲ Ocultar URL' : '🔗 Ver URL LinkedIn'}
+                                      </button>
                                     )}
                                   </div>
+                                  {lead.linkedin && isLinkedinExpanded && (
+                                    <div className={`mt-2 p-2 rounded-xl border flex items-center gap-1.5 max-w-[320px] ${darkMode ? 'bg-slate-950 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                      <input
+                                        type="text"
+                                        readOnly
+                                        value={lead.linkedin}
+                                        onFocus={(e) => e.target.select()}
+                                        className={`w-full text-[11px] font-mono bg-transparent focus:outline-none select-all ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}
+                                        title="URL original cargada en el reporte (haz clic para seleccionar)"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyLinkedin(`meet-${lead.id}`, lead.linkedin)}
+                                        className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold shrink-0 cursor-pointer"
+                                      >
+                                        {copiedLinkedinId === `meet-${lead.id}` ? '✓ Copiado' : '📋 Copiar'}
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="py-3.5 px-4 align-top">
                                   <div className="font-bold">{lead.fechaEjecucionReunion || lead.fechaConfirmacionReunion}</div>
@@ -1478,12 +1537,25 @@
                         <h3 className="text-base font-extrabold">👥 Lista de Interesados ({interestedLeads.length})</h3>
                         <p className="text-xs text-slate-400">Empresa, País, Cargo, Fecha de ejecución y Fecha de interés</p>
                       </div>
-                      <button
-                        onClick={() => exportElementAsHDImage('card-interested-table', 'lista_interesados_HD', 'png', darkMode)}
-                        className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-500/10 hover:bg-slate-500/20 cursor-pointer"
-                      >
-                        📸 HD
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowAllLinkedinUrls((v) => !v)}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer ${
+                            showAllLinkedinUrls
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-slate-500/10 hover:bg-slate-500/20 border-transparent'
+                          }`}
+                          title="Mostrar u ocultar todas las URLs de LinkedIn para copiar y pegar"
+                        >
+                          🔗 {showAllLinkedinUrls ? 'Ocultar URLs LinkedIn' : 'Ver URLs LinkedIn'}
+                        </button>
+                        <button
+                          onClick={() => exportElementAsHDImage('card-interested-table', 'lista_interesados_HD', 'png', darkMode)}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-500/10 hover:bg-slate-500/20 cursor-pointer"
+                        >
+                          📸 HD
+                        </button>
+                      </div>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
@@ -1498,28 +1570,66 @@
                           </tr>
                         </thead>
                         <tbody className={`divide-y text-xs sm:text-sm ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                          {displayedInterested.map((lead) => (
-                            <tr key={lead.id} className="hover:bg-slate-500/5">
-                              <td className="py-3 px-5">
-                                <div className="font-bold">{lead.empresa}</div>
-                                <span className="text-[11px] text-blue-500 font-medium">{lead.industria}</span>
-                              </td>
-                              <td className="py-3 px-4 font-medium">{lead.pais}</td>
-                              <td className="py-3 px-4">
-                                <div className="font-semibold">{lead.cargo}</div>
-                                <div className="text-[11px] text-slate-400">{lead.nombre}</div>
-                              </td>
-                              <td className="py-3 px-4">{lead.fechaEjecucionReunion || lead.fechaEnvioConexion}</td>
-                              <td className="py-3 px-4">
-                                <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-500 font-bold text-xs">
-                                  {lead.fechaInteresado}
-                                </span>
-                              </td>
-                              <td className="py-3 px-5 text-xs text-slate-400 max-w-xs truncate" title={lead.respuestaContacto}>
-                                {lead.respuestaContacto || 'Interés confirmado'}
-                              </td>
-                            </tr>
-                          ))}
+                          {displayedInterested.map((lead) => {
+                            const isLinkedinExpanded = showAllLinkedinUrls || openLinkedinRowId === `int-${lead.id}`;
+                            return (
+                              <tr key={lead.id} className="hover:bg-slate-500/5">
+                                <td className="py-3 px-5 align-top">
+                                  <div className="font-bold">{lead.empresa}</div>
+                                  <span className="text-[11px] text-blue-500 font-medium">{lead.industria}</span>
+                                </td>
+                                <td className="py-3 px-4 align-top font-medium">{lead.pais}</td>
+                                <td className="py-3 px-4 align-top">
+                                  <div className="font-semibold">{lead.cargo}</div>
+                                  <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                    <span>{lead.nombre}</span>
+                                    {lead.linkedin && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setOpenLinkedinRowId((prev) =>
+                                            prev === `int-${lead.id}` ? null : `int-${lead.id}`
+                                          )
+                                        }
+                                        className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 cursor-pointer"
+                                        title="Mostrar vista auxiliar con la URL tal cual aparece en el CSV para copiar y pegar"
+                                      >
+                                        {isLinkedinExpanded ? '▲ Ocultar URL' : '🔗 Ver URL LinkedIn'}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {lead.linkedin && isLinkedinExpanded && (
+                                    <div className={`mt-2 p-2 rounded-xl border flex items-center gap-1.5 max-w-[320px] ${darkMode ? 'bg-slate-950 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                      <input
+                                        type="text"
+                                        readOnly
+                                        value={lead.linkedin}
+                                        onFocus={(e) => e.target.select()}
+                                        className={`w-full text-[11px] font-mono bg-transparent focus:outline-none select-all ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}
+                                        title="URL original cargada en el reporte (haz clic para seleccionar)"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyLinkedin(`int-${lead.id}`, lead.linkedin)}
+                                        className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold shrink-0 cursor-pointer"
+                                      >
+                                        {copiedLinkedinId === `int-${lead.id}` ? '✓ Copiado' : '📋 Copiar'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 align-top">{lead.fechaEjecucionReunion || lead.fechaEnvioConexion}</td>
+                                <td className="py-3 px-4 align-top">
+                                  <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-500 font-bold text-xs">
+                                    {lead.fechaInteresado}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-5 align-top text-xs text-slate-400 max-w-xs truncate" title={lead.respuestaContacto}>
+                                  {lead.respuestaContacto || 'Interés confirmado'}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
